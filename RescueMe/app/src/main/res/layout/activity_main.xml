@@ -19,14 +19,14 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Let's get you started by choosing your contacts.\nPlease select up to 3 contacts."
+        android:text="Let's get you started by choosing your contacts.\nPlease add a minimum of 3 contacts."
         android:layout_marginBottom="20dp"/>
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/addContactBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Choose Contacts"
+        android:text="Add Contact"
         android:textAllCaps="false"
         android:onClick="goToContacts"/>
 
@@ -34,6 +34,16 @@
         android:id="@+id/contactsLv"
         android:layout_width="match_parent"
         android:layout_height="300dp" />
+
+    <Button
+        android:id="@+id/nextBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Next"
+        android:backgroundTint="#3cb043"
+        android:textAllCaps="false"
+        android:onClick="goToHome"
+        android:visibility="invisible"/>
 
 
 </LinearLayout>
