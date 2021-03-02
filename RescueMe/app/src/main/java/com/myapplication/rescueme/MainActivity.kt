@@ -1,12 +1,15 @@
 package com.myapplication.rescueme
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.myapplication.rescueme.databinding.ActivityHomeBinding
 import com.myapplication.rescueme.databinding.ActivityMainBinding
 import java.io.PrintStream
@@ -29,9 +32,22 @@ class MainActivity : AppCompatActivity() {
         setupContactsList()
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 111 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            val it = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
+            startActivityForResult(it, PICK_CONTACT);
+        }
+    }
+
     fun goToContacts(view: View) {
-        val it = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
-        startActivityForResult(it, PICK_CONTACT);
+        // If permission not granted, request permission.
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, Array(1){ Manifest.permission.READ_CONTACTS}, 111)
+        } else {
+            val it = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
+            startActivityForResult(it, PICK_CONTACT);
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
