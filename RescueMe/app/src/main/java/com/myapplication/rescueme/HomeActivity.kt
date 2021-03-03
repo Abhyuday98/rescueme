@@ -57,14 +57,14 @@ class HomeActivity : AppCompatActivity() {
 
         // set audio and video source
         recorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
-        recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA)
+//        recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA)
 
         // set output format
         recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
 
         // set audio and video encoder
         recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-        recorder.setVideoEncoder(MediaRecorder.VideoEncoder.MPEG_4_SP)
+//        recorder.setVideoEncoder(MediaRecorder.VideoEncoder.MPEG_4_SP)
 
         // set output file
         recorder.setOutputFile(VIDEO_PATH)
@@ -82,7 +82,6 @@ class HomeActivity : AppCompatActivity() {
                 recorder.stop()
                 recorder.release()
                 binding.videoView.visibility = View.VISIBLE
-//                binding.surfaceView.visibility = View.VISIBLE
             }, delay)
 
     }
