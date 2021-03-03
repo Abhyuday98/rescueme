@@ -32,21 +32,31 @@ class MainActivity : AppCompatActivity() {
         setupContactsList()
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 111 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            val it = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
-            startActivityForResult(it, PICK_CONTACT);
+    fun goToContacts(view: View) {
+        if (hasReadContactsPermission()) {
+            pickContact()
+        } else {
+            requestReadContactsPermission()
         }
     }
 
-    fun goToContacts(view: View) {
-        // If permission not granted, request permission.
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, Array(1){ Manifest.permission.READ_CONTACTS}, 111)
-        } else {
-            val it = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
-            startActivityForResult(it, PICK_CONTACT);
+    private fun pickContact() {
+        val it = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
+        startActivityForResult(it, PICK_CONTACT);
+    }
+
+    private fun hasReadContactsPermission() : Boolean {
+        return (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
+    }
+
+    private fun requestReadContactsPermission() {
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CONTACTS), 111)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 111 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            pickContact()
         }
     }
 
@@ -155,7 +165,7 @@ class MainActivity : AppCompatActivity() {
         startActivity(it)
     }
 
-    // show button only if contacts is minimally 3
+    // show button only if contacts are minimally 3
     private fun showButton() {
         if (contactsList.size >= 3) {
             binding.nextBtn.visibility = View.VISIBLE
