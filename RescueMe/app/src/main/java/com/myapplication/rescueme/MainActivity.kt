@@ -160,8 +160,8 @@ class MainActivity : AppCompatActivity() {
         showButton()
     }
 
-    fun goToHome(view: View) {
-        val it = Intent(this, HomeActivity::class.java)
+    fun goToPasscodeActivity(view: View) {
+        val it = Intent(this, FirstPasscodeActivity::class.java)
         startActivity(it)
     }
 
