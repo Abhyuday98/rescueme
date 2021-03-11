@@ -30,6 +30,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupContactsList()
+
+        // go directly to HomeActivity if passcode exists
+        if (fileExist("passcode.txt")) {
+            val it = Intent(this, HomeActivity::class.java)
+            startActivity(it)
+        }
     }
 
     fun goToContacts(view: View) {
