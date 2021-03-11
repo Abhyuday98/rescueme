@@ -7,89 +7,72 @@ import android.media.MediaRecorder
 import android.opengl.Visibility
 import android.os.Bundle
 import android.os.Handler
+import android.view.MenuItem
 import android.view.SurfaceView
 import android.view.View
 import android.widget.Toast
+import android.widget.Toolbar
+import androidx.appcompat.app.ActionBar
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
+import com.google.android.material.navigation.NavigationView
 import com.myapplication.rescueme.databinding.ActivityHomeBinding
 
-class HomeActivity : AppCompatActivity() {
+class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
     private lateinit var binding:ActivityHomeBinding
-    private var delay : Long = 10000 // delay for 10s
-    private var VIDEO_PATH = ""
+    private lateinit var drawer : DrawerLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
-    }
 
-    private fun hasCameraAudioPermissions() : Boolean {
-        return ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        val toolbar = binding.toolbar
+        setSupportActionBar(toolbar)
 
-    }
+        drawer = binding.drawerLayout
+        val navigationView : NavigationView = findViewById(R.id.nav_view) //somehow binding cannot find that id nav_view
+        navigationView.setNavigationItemSelectedListener(this)
 
-    private fun requestCameraAudioPermissions() {
-        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA), 222)
-    }
+        val toggle : ActionBarDrawerToggle = ActionBarDrawerToggle(this, drawer, toolbar,
+            R.string.navigation_drawer_open, R.string.navigation_drawer_close)
+        drawer.addDrawerListener(toggle)
+        toggle.syncState()
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 222 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startVideoRecording()
+        // savedInstanceState null condition means load Home fragment on create if no rotation
+        // E.g. if contacts fragment is open, screen rotates stays at contacts fragment, will not load home fragment.
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction().replace(R.id.fragment_container, HomeFragment()).commit()
+            navigationView.setCheckedItem(R.id.home)
         }
     }
 
-    fun sendHelp(view: View) {
-        if (hasCameraAudioPermissions()) {
-            startVideoRecording()
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.home -> {
+                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, HomeFragment()).commit()
+            }
+            R.id.contacts_setting -> {
+                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, ContactsFragment()).commit()
+            }
+            R.id.timer_setting -> {
+                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, TimerFragment()).commit()
+            }
+        }
+
+        drawer.closeDrawer(GravityCompat.START)
+        return true
+    }
+
+    // so that when user press back, close navigation drawer if open instead of exiting activity first
+    override fun onBackPressed() {
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START)
         } else {
-            requestCameraAudioPermissions()
+            super.onBackPressed()
         }
-    }
-
-    private fun startVideoRecording() {
-        VIDEO_PATH = this.filesDir.absolutePath + "/test.mp4"
-
-        val recorder = MediaRecorder()
-
-        // set audio and video source
-        recorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
-//        recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA)
-
-        // set output format
-        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-
-        // set audio and video encoder
-        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-//        recorder.setVideoEncoder(MediaRecorder.VideoEncoder.MPEG_4_SP)
-
-        // set output file
-        recorder.setOutputFile(VIDEO_PATH)
-
-        // set preview display
-//        recorder.setPreviewDisplay(binding.surfaceView.holder.surface)
-//        recorder.setPreviewDisplay(findViewById<SurfaceView>(R.id.surfaceView).holder.surface)
-
-        recorder.prepare()
-        recorder.start()
-
-        val handler = Handler()
-        handler.postDelayed(
-            {
-                recorder.stop()
-                recorder.release()
-                binding.videoView.visibility = View.VISIBLE
-            }, delay)
-
-    }
-
-    // for testing.
-    fun clickVideo(view: View) {
-        Toast.makeText(this, "Video has been clicked. Video path is $VIDEO_PATH", Toast.LENGTH_LONG).show()
-        binding.videoView.setVideoPath(VIDEO_PATH)
-        binding.videoView.start()
     }
 }

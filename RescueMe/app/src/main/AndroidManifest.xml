@@ -16,7 +16,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.RescueMe">
-        <activity android:name=".HomeActivity"></activity>
+        <activity android:name=".HomeActivity"
+            android:theme="@style/Theme.RescueMe.NoActionBar"></activity>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
