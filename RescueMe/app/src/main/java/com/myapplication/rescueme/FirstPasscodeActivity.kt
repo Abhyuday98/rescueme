@@ -18,12 +18,12 @@ class FirstPasscodeActivity : AppCompatActivity() {
         setContentView(R.layout.activity_first_passcode)
     }
 
-    fun String.toMD5(): String {
+    private fun String.toMD5(): String {
         val bytes = MessageDigest.getInstance("MD5").digest(this.toByteArray())
         return bytes.toHex()
     }
 
-    fun ByteArray.toHex(): String {
+    private fun ByteArray.toHex(): String {
         return joinToString("") { "%02x".format(it) }
     }
 
@@ -39,17 +39,17 @@ class FirstPasscodeActivity : AppCompatActivity() {
             Toast.makeText(this, "Please enter a 4-digit passcode.", Toast.LENGTH_LONG).show()
         }
 
-        // Only if file with passcode exist, then go HomActivity.
+        // Only if file with passcode exist, then go HomeActivity.
         if (fileExist("passcode.txt")) {
             val it = Intent(this, HomeActivity::class.java)
             startActivity(it)
         }
     }
 
-    // save passcode
-    private fun savePasscode(passcodeString : String) {
-        val output = PrintStream(openFileOutput("passcode.txt", MODE_APPEND))
-        output.println(passcodeString)
+    // save hashed passcode
+    private fun savePasscode(hashedPasscode : String) {
+        val output = PrintStream(openFileOutput("passcode.txt", MODE_PRIVATE))
+        output.println(hashedPasscode)
         output.close()
     }
 

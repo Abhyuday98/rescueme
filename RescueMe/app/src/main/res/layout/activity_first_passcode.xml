@@ -8,11 +8,18 @@
     android:orientation="vertical"
     android:gravity="center">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Please create a 4-digit passcode which will be used for verification later."
+        android:textAlignment="center"
+        android:layout_gravity="center_horizontal"/>
+
     <EditText
         android:id="@+id/passcodeEditText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="Enter a 4 digit passcode."
+        android:hint="Enter a 4-digit passcode."
         android:inputType="numberPassword"/>
 
     <Button
