@@ -18,6 +18,11 @@
             android:id="@+id/timer_setting"
             android:icon="@drawable/ic_timer"
             android:title="Timer" />
+
+        <item
+            android:id="@+id/passcode_setting"
+            android:icon="@drawable/ic_security"
+            android:title="Change Passcode" />
     </group>
 
     <item android:title="More">

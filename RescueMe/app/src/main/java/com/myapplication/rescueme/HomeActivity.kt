@@ -61,6 +61,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.id.timer_setting -> {
                 supportFragmentManager.beginTransaction().replace(R.id.fragment_container, TimerFragment()).commit()
             }
+            R.id.passcode_setting -> {
+                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, PasscodeFragment()).commit()
+            }
         }
 
         drawer.closeDrawer(GravityCompat.START)
