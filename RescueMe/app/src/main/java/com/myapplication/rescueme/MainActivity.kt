@@ -21,8 +21,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding:ActivityMainBinding
     private val PICK_CONTACT = 1
 
-    private lateinit var myAdapter:ArrayAdapter<String>
-    private var contactsList = ArrayList<String>()
+//    private lateinit var myAdapter:ArrayAdapter<String>
+//    private var contactsList = ArrayList<String>()
+
+    private lateinit var myAdapter: ContactAdapter
+    private var contactsList = ArrayList<Contact>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,10 +34,39 @@ class MainActivity : AppCompatActivity() {
 
         setupContactsList()
 
+        // temporarily just remove based on item click
+        binding.contactsLv.setOnItemClickListener {list, _, index, _ ->
+            contactsList.removeAt(index) // Bug: last item somehow cannot be removed?
+            myAdapter.notifyDataSetChanged()
+
+            // rewrite the file with new contactsList
+            rewrite()
+        }
+
         // go directly to HomeActivity if passcode exists
-        if (fileExist("passcode.txt")) {
-            val it = Intent(this, HomeActivity::class.java)
-            startActivity(it)
+//        if (fileExist("passcode.txt")) {
+//            val it = Intent(this, HomeActivity::class.java)
+//            startActivity(it)
+//        }
+    }
+
+    private fun rewrite() {
+        for (i in 0 until contactsList.size) {
+            val contactId = contactsList[i].id
+            val contactName = contactsList[i].name
+            val contactNumber = contactsList[i].number
+
+            val details = contactId + "\t" + contactName + "\t" + contactNumber
+
+            if (i == 0) {
+                val output = PrintStream(openFileOutput("contacts.txt", MODE_PRIVATE))
+                output.println(details)
+                output.close()
+            } else {
+                val output = PrintStream(openFileOutput("contacts.txt", MODE_APPEND))
+                output.println(details)
+                output.close()
+            }
         }
     }
 
@@ -150,17 +182,26 @@ class MainActivity : AppCompatActivity() {
         while (scan.hasNextLine()) {
             val line = scan.nextLine()
             val pieces = line.split("\t")
+            val contactId = pieces[0]
             val contactName = pieces[1]
             val contactNumber = pieces[2]
 
             // append pieces as a string in this format "Name\nContactNumber"
-            val contactDetails = "$contactName\n$contactNumber"
-            if (!contactsList.contains(contactDetails)) {
-                contactsList.add(contactDetails)
+//            val contactDetails = "$contactName\n$contactNumber"
+//            if (!contactsList.contains(contactDetails)) {
+//                contactsList.add(contactDetails)
+//            }
+
+            // create list of contact objects
+            val contact = Contact(contactId, contactName, contactNumber)
+            if (!contactsList.contains(contact)) {
+                contactsList.add(contact)
             }
+
         }
 
-        myAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, contactsList)
+//        myAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, contactsList)
+        myAdapter = ContactAdapter(this, contactsList)
         binding.contactsLv.adapter = myAdapter
 
         showButton()
