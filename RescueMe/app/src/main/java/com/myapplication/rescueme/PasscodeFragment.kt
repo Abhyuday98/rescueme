@@ -37,8 +37,6 @@ class PasscodeFragment : Fragment(), View.OnClickListener {
     private fun isCorrectPasscode(passcodeString: String) : Boolean {
         var originalPasscode = ""
         val hashedOldPasscode = passcodeString.toMD5()
-//        Toast.makeText(activity!!, hashedOldPasscode, Toast.LENGTH_LONG).show()
-        // figure out why password hashed not same
 
         val scan = Scanner(activity!!.openFileInput("passcode.txt"))
         while (scan.hasNextLine()) {
@@ -66,13 +64,29 @@ class PasscodeFragment : Fragment(), View.OnClickListener {
         val newPasscode = activity!!.findViewById<EditText>(R.id.newPasscodeEditText)
         val newPasscodeString = newPasscode.text.toString()
 
+        val confirmNewPasscode = activity!!.findViewById<EditText>(R.id.confirmNewPasscodeEditText)
+        val confirmNewPasscodeString = confirmNewPasscode.text.toString()
+
+        var errorMsg = ""
         if (v!!.id == R.id.saveBtn) {
-            if (isCorrectPasscode(oldPasscodeString) && is4digit(newPasscodeString)) {
+            if (!isCorrectPasscode(oldPasscodeString)) {
+                errorMsg += "Old passcode entered is incorrect.\n"
+            }
+
+            if (!is4digit(newPasscodeString)) {
+                errorMsg += "Please enter a 4-digit new passcode.\n"
+            }
+
+            if(newPasscodeString != confirmNewPasscodeString) {
+                errorMsg += "Confirm new passcode does not match.\n"
+            }
+
+            if (isCorrectPasscode(oldPasscodeString) && is4digit(newPasscodeString) && is4digit(confirmNewPasscodeString)) {
                 val hashedNewPasscode = newPasscodeString.toMD5()
                 overwritePasscode(hashedNewPasscode)
                 Toast.makeText(activity!!, "Change passcode is successful.", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(activity!!, "Please make sure you entered the correct old passcode and/or a 4-digit new passcode", Toast.LENGTH_LONG).show()
+                Toast.makeText(activity!!, errorMsg.dropLast(2), Toast.LENGTH_LONG).show()
             }
         }
     }
