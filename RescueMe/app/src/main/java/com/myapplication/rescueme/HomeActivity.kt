@@ -64,6 +64,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.id.passcode_setting -> {
                 supportFragmentManager.beginTransaction().replace(R.id.fragment_container, PasscodeFragment()).commit()
             }
+            R.id.rescue_tab -> {
+                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, RescueFragment()).commit()
+            }
         }
 
         drawer.closeDrawer(GravityCompat.START)

@@ -23,6 +23,12 @@
             android:id="@+id/passcode_setting"
             android:icon="@drawable/ic_security"
             android:title="Change Passcode" />
+
+        <item
+            android:id="@+id/rescue_tab"
+            android:icon="@drawable/ic_help"
+            android:title="Rescue Who" />
+
     </group>
 
     <item android:title="More">
