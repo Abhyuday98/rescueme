@@ -1,48 +1,58 @@
 package com.myapplication.rescueme
 
 import android.Manifest
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
-import com.myapplication.rescueme.databinding.ActivityMainBinding
+import java.io.File
 import java.io.PrintStream
 import java.util.*
 import kotlin.collections.ArrayList
 
+
 class ContactsFragment : Fragment(), View.OnClickListener {
     private val PICK_CONTACT = 1
-    private lateinit var myAdapter: ArrayAdapter<String>
-    private var contactsList = ArrayList<String>()
-    private var contactObjectsList = ArrayList<Contact>()
+
+    private lateinit var myAdapter: ContactAdapter
+    private var contactsList = ArrayList<Contact>()
+
+    private lateinit var v: View
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        super.onCreate(savedInstanceState)
-        val v = inflater.inflate(R.layout.fragment_contacts, container, false)
+//        val v = inflater.inflate(R.layout.fragment_home, container, false)
 
+        v = inflater.inflate(R.layout.fragment_contacts, container, false)
         setupContactsList()
-        // have a list of Contacts
-        // define myAdapter with ContactAdapter
-        // contactsListView.adapater = myAdapter
 
-//        myAdapter = ArrayAdapter(activity!!, android.R.layout.simple_list_item_1, contactsList)
-//        val contactsListView = v.findViewById<ListView>(R.id.contactsListView)
-//        contactsListView.adapter = myAdapter
+        if (v == null) {
+            Log.i("View v", "v is null")
+        } else {
+            Log.i("View v", "v is not null")
+        }
 
-        // Remove chosen contact on click
-//        contactsListView.setOnItemClickListener {list, _, index, _ ->
+//        onViewCreated(v, savedInstanceState)
 
-//        }
+        // temporarily just remove based on item click
+        val contactsListView = v.findViewById<ListView>(R.id.contactsListView)
+        contactsListView.setOnItemClickListener { list, _, index, _ ->
+            contactsList.removeAt(index)
+            myAdapter.notifyDataSetChanged()
+
+            rewrite() // rewrite the file with new contactsList
+        }
 
         val addContactButton = v.findViewById<Button>(R.id.addContactButton)
         addContactButton.setOnClickListener(this)
@@ -50,9 +60,35 @@ class ContactsFragment : Fragment(), View.OnClickListener {
         return v
     }
 
-    override fun onClick(v: View?) {
-        when (v!!.id) {
-            R.id.addContactButton -> goToContacts()
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setupContactsList()
+    }
+
+    private fun rewrite() {
+        // If contactsList is empty, delete the file.
+        if (contactsList.size == 0) {
+            val dir = activity!!.filesDir
+            val file = File(dir, "contacts.txt")
+            file.delete()
+        } else {
+            for (i in 0 until contactsList.size) {
+                val contactId = contactsList[i].id
+                val contactName = contactsList[i].name
+                val contactNumber = contactsList[i].number
+
+                val details = contactId + "\t" + contactName + "\t" + contactNumber
+
+                if (i == 0) {
+                    val output = PrintStream(activity!!.openFileOutput("contacts.txt", AppCompatActivity.MODE_PRIVATE))
+                    output.println(details)
+                    output.close()
+                } else {
+                    val output = PrintStream(activity!!.openFileOutput("contacts.txt", AppCompatActivity.MODE_APPEND))
+                    output.println(details)
+                    output.close()
+                }
+            }
         }
     }
 
@@ -123,7 +159,7 @@ class ContactsFragment : Fragment(), View.OnClickListener {
         }
     }
 
-    private fun writeFile(details : ArrayList<String>) {
+    private fun writeFile(details: ArrayList<String>) {
         var contactExists = false
 
         // check if file exist before reading.
@@ -172,19 +208,29 @@ class ContactsFragment : Fragment(), View.OnClickListener {
             val contactName = pieces[1]
             val contactNumber = pieces[2]
 
-//            // append pieces as a string in this format "Name\nContactNumber"
-//            val contactDetails = "$contactName\n$contactNumber"
-//            if (!contactsList.contains(contactDetails)) {
-//                contactsList.add(contactDetails)
-//            }
-
-            // Create list of contact objects
-            val contactObject = Contact(contactId, contactName, contactNumber)
-            if (!contactObjectsList.contains(contactObject)) {
-                contactObjectsList.add(contactObject)
+            // create list of contact objects
+            val contact = Contact(contactId, contactName, contactNumber)
+            if (!contactsList.contains(contact)) {
+                contactsList.add(contact)
             }
+
         }
+
+        myAdapter = ContactAdapter(activity!!, contactsList)
+
+        if (v == null) {
+            Log.i("View v", "v is null.")
+        } else {
+            val contactsListView = v.findViewById<ListView>(R.id.contactsListView)
+            contactsListView.adapter = myAdapter
+        }
+
     }
 
+    override fun onClick(v: View?) {
+        when (v!!.id) {
+            R.id.addContactButton -> goToContacts()
+        }
+    }
 
 }
