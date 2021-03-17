@@ -32,8 +32,7 @@ class MainActivity : AppCompatActivity() {
 
         // temporarily just remove based on item click
         binding.contactsLv.setOnItemClickListener { list, _, index, _ ->
-            contactsList.removeAt(index) // Bug: last item somehow cannot be removed?
-            Toast.makeText(this, "$contactsList[0]", Toast.LENGTH_SHORT).show()
+            contactsList.removeAt(index)
             myAdapter.notifyDataSetChanged()
 
             rewrite() // rewrite the file with new contactsList
