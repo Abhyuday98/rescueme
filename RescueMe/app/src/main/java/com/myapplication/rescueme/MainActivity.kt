@@ -6,12 +6,11 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.myapplication.rescueme.databinding.ActivityHomeBinding
 import com.myapplication.rescueme.databinding.ActivityMainBinding
+import java.io.File
 import java.io.PrintStream
 import java.util.*
 import kotlin.collections.ArrayList
@@ -20,9 +19,6 @@ import kotlin.collections.ArrayList
 class MainActivity : AppCompatActivity() {
     private lateinit var binding:ActivityMainBinding
     private val PICK_CONTACT = 1
-
-//    private lateinit var myAdapter:ArrayAdapter<String>
-//    private var contactsList = ArrayList<String>()
 
     private lateinit var myAdapter: ContactAdapter
     private var contactsList = ArrayList<Contact>()
@@ -35,42 +31,49 @@ class MainActivity : AppCompatActivity() {
         setupContactsList()
 
         // temporarily just remove based on item click
-        binding.contactsLv.setOnItemClickListener {list, _, index, _ ->
+        binding.contactsLv.setOnItemClickListener { list, _, index, _ ->
             contactsList.removeAt(index) // Bug: last item somehow cannot be removed?
+            Toast.makeText(this, "$contactsList[0]", Toast.LENGTH_SHORT).show()
             myAdapter.notifyDataSetChanged()
 
-            // rewrite the file with new contactsList
-            rewrite()
+            rewrite() // rewrite the file with new contactsList
         }
 
         // go directly to HomeActivity if passcode exists
-//        if (fileExist("passcode.txt")) {
-//            val it = Intent(this, HomeActivity::class.java)
-//            startActivity(it)
-//        }
+        if (fileExist("passcode.txt")) {
+            val it = Intent(this, HomeActivity::class.java)
+            startActivity(it)
+        }
     }
 
     private fun rewrite() {
-        for (i in 0 until contactsList.size) {
-            val contactId = contactsList[i].id
-            val contactName = contactsList[i].name
-            val contactNumber = contactsList[i].number
+        // If contactsList is empty, delete the file.
+        if (contactsList.size == 0) {
+            val dir = filesDir
+            val file = File(dir, "contacts.txt")
+            file.delete()
+        } else {
+            for (i in 0 until contactsList.size) {
+                val contactId = contactsList[i].id
+                val contactName = contactsList[i].name
+                val contactNumber = contactsList[i].number
 
-            val details = contactId + "\t" + contactName + "\t" + contactNumber
+                val details = contactId + "\t" + contactName + "\t" + contactNumber
 
-            if (i == 0) {
-                val output = PrintStream(openFileOutput("contacts.txt", MODE_PRIVATE))
-                output.println(details)
-                output.close()
-            } else {
-                val output = PrintStream(openFileOutput("contacts.txt", MODE_APPEND))
-                output.println(details)
-                output.close()
+                if (i == 0) {
+                    val output = PrintStream(openFileOutput("contacts.txt", MODE_PRIVATE))
+                    output.println(details)
+                    output.close()
+                } else {
+                    val output = PrintStream(openFileOutput("contacts.txt", MODE_APPEND))
+                    output.println(details)
+                    output.close()
+                }
             }
         }
     }
 
-    fun goToContacts(view: View) {
+    fun goToContacts() {
         if (hasReadContactsPermission()) {
             pickContact()
         } else {
@@ -116,11 +119,11 @@ class MainActivity : AppCompatActivity() {
                 // checks if contact has phone number
                 if (idResults == 1) {
                     val cursor2 = contentResolver.query(
-                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                        null,
-                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = " + contactId,
-                        null,
-                        null)
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                            null,
+                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = " + contactId,
+                            null,
+                            null)
 
                     // a contact may have multiple phone numbers
                     while (cursor2!!.moveToNext()) {
@@ -137,7 +140,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun writeFile(details : ArrayList<String>) {
+    private fun writeFile(details: ArrayList<String>) {
         var contactExists = false
 
         // check if file exist before reading.
@@ -186,12 +189,6 @@ class MainActivity : AppCompatActivity() {
             val contactName = pieces[1]
             val contactNumber = pieces[2]
 
-            // append pieces as a string in this format "Name\nContactNumber"
-//            val contactDetails = "$contactName\n$contactNumber"
-//            if (!contactsList.contains(contactDetails)) {
-//                contactsList.add(contactDetails)
-//            }
-
             // create list of contact objects
             val contact = Contact(contactId, contactName, contactNumber)
             if (!contactsList.contains(contact)) {
@@ -200,7 +197,6 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-//        myAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, contactsList)
         myAdapter = ContactAdapter(this, contactsList)
         binding.contactsLv.adapter = myAdapter
 
