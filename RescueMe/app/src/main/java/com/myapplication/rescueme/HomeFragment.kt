@@ -1,6 +1,8 @@
 package com.myapplication.rescueme
 
 import android.Manifest
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.os.Bundle
@@ -10,12 +12,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
-import android.widget.VideoView
+import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -23,27 +23,22 @@ import java.util.*
 class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var v : View
 
-    private var delay : Long = 10000 // delay for 10s
+    // video variables
+//    private var delay : Long = 10000 // delay for 10s
+    private var delay : Long = 5000 // delay for 5s, testing purposes.
     private var VIDEO_PATH = ""
     private lateinit var videoView : VideoView
 
-//    private var mMilliseconds = 0.toLong()
-    private var mMilliseconds : Long = 600000
-
-    var mCountDownTimer: CountDownTimer = object : CountDownTimer(mMilliseconds, 1000) {
-        override fun onFinish() {
-            timerDisplay.setText(mSimpleDateFormat.format(0))
-        }
-
-        override fun onTick(millisUntilFinished: Long) {
-            timerDisplay.setText(mSimpleDateFormat.format(millisUntilFinished))
-        }
-    }
-
+    // countdown timer variables
+    private lateinit var mCountDownTimer : CountDownTimer
     var mSimpleDateFormat: SimpleDateFormat = SimpleDateFormat("HH:mm:ss")
     private lateinit var timerDisplay: TextView
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         v = inflater.inflate(R.layout.fragment_home, container, false)
 
         val helpBtn = v.findViewById<Button>(R.id.helpBtn)
@@ -55,8 +50,10 @@ class HomeFragment : Fragment(), View.OnClickListener {
         val startTimerBtn = v.findViewById<Button>(R.id.startTimer)
         startTimerBtn.setOnClickListener(this)
 
-        val endTimerBtn = v.findViewById<Button>(R.id.stopTimer)
-        endTimerBtn.setOnClickListener(this)
+        val enterButton = v.findViewById<Button>(R.id.enterButton)
+        enterButton.setOnClickListener(this)
+
+        mCountDownTimer = createCountDownTimer()
 
         return v
     }
@@ -87,37 +84,9 @@ class HomeFragment : Fragment(), View.OnClickListener {
         }
     }
 
-    // temp trigger via button click. Once we have audio detected, then can shift this function.
-    private fun startTimer() {
-        mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        if (v != null) {
-            timerDisplay = v.findViewById(R.id.timerDisplay);
-            timerDisplay.visibility = View.VISIBLE
-
-            mMilliseconds = getTime()
-
-            Toast.makeText(activity!!, "$mMilliseconds", Toast.LENGTH_SHORT).show()
-            mCountDownTimer.start();
-        } else {
-            Log.i("View v", "v is null.")
-        }
-    }
-
-    private fun stopTimer() {
-        mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        if (v != null) {
-            timerDisplay = v.findViewById(R.id.timerDisplay);
-//            mMilliseconds = getTime()
-            mCountDownTimer.cancel();
-        } else {
-            Log.i("View v", "v is null.")
-        }
-    }
-
     private fun sendHelp() {
         if (hasCameraAudioPermissions()) {
+            // create & call a function that gets the user's location
             startVideoRecording()
 //            Toast.makeText(activity!!, "has permission!", Toast.LENGTH_SHORT).show()
         } else {
@@ -125,6 +94,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         }
     }
 
+    // Figure out how to record video.
     private fun startVideoRecording() {
         VIDEO_PATH = activity!!.filesDir.absolutePath + "/test.mp4"
 
@@ -175,6 +145,95 @@ class HomeFragment : Fragment(), View.OnClickListener {
         videoView.start()
     }
 
+    // temp trigger via button click. Once we have audio detected, then can shift this function.
+    private fun startTimer() {
+        mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        if (v != null) {
+            val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
+            enterPasscodeEditText.visibility = View.VISIBLE
+
+            val enterButton = v.findViewById<Button>(R.id.enterButton)
+            enterButton.visibility = View.VISIBLE
+
+            timerDisplay = v.findViewById(R.id.timerDisplay);
+            timerDisplay.visibility = View.VISIBLE
+
+            mCountDownTimer.start();
+            // show enter passcode field and enter button
+
+            mCountDownTimer.onFinish()
+        } else {
+            Log.i("View v", "v is null.")
+        }
+    }
+
+    // makes timer pause and disappear.
+    private fun stopTimer() {
+        mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        if (v != null) {
+            val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
+            enterPasscodeEditText.visibility = View.GONE
+
+            val enterButton = v.findViewById<Button>(R.id.enterButton)
+            enterButton.visibility = View.GONE
+
+            timerDisplay = v.findViewById(R.id.timerDisplay);
+            timerDisplay.visibility = View.GONE
+
+            mCountDownTimer.cancel();
+        } else {
+            Log.i("View v", "v is null.")
+        }
+    }
+
+    private fun enterPasscode() {
+        if (v != null) {
+            val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
+            val enterPasscodeString = enterPasscodeEditText.text.toString()
+            if (isCorrectPasscode(enterPasscodeString)) {
+                stopTimer()
+                Toast.makeText(
+                    activity!!,
+                    "Correct passcode entered. Timer has stopped.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(
+                    activity!!,
+                    "Incorrect passcode entered. Please try again.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+        } else {
+            Log.i("View v", "v is null.")
+        }
+    }
+
+    private fun String.toMD5(): String {
+        val bytes = MessageDigest.getInstance("MD5").digest(this.toByteArray())
+        return bytes.toHex()
+    }
+
+    private fun ByteArray.toHex(): String {
+        return joinToString("") { "%02x".format(it) }
+    }
+
+    // compares the entered hashed passcode wih the one saved in file
+    private fun isCorrectPasscode(passcodeString: String) : Boolean {
+        var originalPasscode = ""
+        val hashedOldPasscode = passcodeString.toMD5()
+
+        val scan = Scanner(activity!!.openFileInput("passcode.txt"))
+        while (scan.hasNextLine()) {
+            originalPasscode = scan.nextLine()
+        }
+
+        return hashedOldPasscode == originalPasscode
+    }
+
     private fun fileExist(fname: String?): Boolean {
         val file = activity!!.baseContext.getFileStreamPath(fname)
         return file.exists()
@@ -182,6 +241,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     // Get saved time. If for some reason no time is saved, default is 3 minutes.
     private fun getTime() : Long {
+        var mMilliseconds = 0.toLong()
+
         if (fileExist("time.txt")) {
             val scan = Scanner(activity!!.openFileInput("time.txt"))
 
@@ -190,11 +251,30 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 mMilliseconds = line.toLong()
             }
         } else {
-            Toast.makeText(activity!!, "No time setting saved. Default time will be 3 minutes.", Toast.LENGTH_SHORT).show()
             mMilliseconds = 3 * 60000
         }
 
         return mMilliseconds
+    }
+
+    // returns CountDownTimer object with the milliseconds read from time.txt
+    private fun createCountDownTimer() : CountDownTimer {
+        val savedTime = getTime()
+        var mCountDownTimer: CountDownTimer = object : CountDownTimer(savedTime, 1000) {
+            override fun onFinish() {
+                timerDisplay.setText(mSimpleDateFormat.format(0))
+                Toast.makeText(activity!!, "Time is up", Toast.LENGTH_SHORT).show()
+                sendHelp() // call sendHelp() if countdown timer is finished.
+            }
+
+            override fun onTick(millisUntilFinished: Long) {
+                timerDisplay.setText(mSimpleDateFormat.format(millisUntilFinished))
+            }
+        }
+
+        Log.i("mCountDownTimer", "$mCountDownTimer")
+
+        return mCountDownTimer
     }
 
     override fun onClick(v: View?) {
@@ -202,7 +282,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
             R.id.helpBtn -> sendHelp()
             R.id.testBtn -> clickVideo()
             R.id.startTimer -> startTimer()
-            R.id.stopTimer -> stopTimer()
+            R.id.enterButton -> enterPasscode()
         }
     }
 
