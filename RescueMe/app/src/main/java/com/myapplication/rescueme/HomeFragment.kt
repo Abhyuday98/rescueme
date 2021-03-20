@@ -2,7 +2,6 @@ package com.myapplication.rescueme
 
 import android.Manifest
 import android.app.AlertDialog
-import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.os.Bundle
@@ -13,6 +12,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import java.security.MessageDigest
@@ -33,12 +33,18 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var mCountDownTimer : CountDownTimer
     var mSimpleDateFormat: SimpleDateFormat = SimpleDateFormat("HH:mm:ss")
     private lateinit var timerDisplay: TextView
+    private var isTimerRunning = false
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        // onbackpressed logic
+        activity?.onBackPressedDispatcher?.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (isTimerRunning == true) {
+                    showAlertDialog()
+                }
+            }
+        })
+
         v = inflater.inflate(R.layout.fragment_home, container, false)
 
         val helpBtn = v.findViewById<Button>(R.id.helpBtn)
@@ -88,6 +94,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         if (hasCameraAudioPermissions()) {
             // create & call a function that gets the user's location
             startVideoRecording()
+            Toast.makeText(activity!!, "Recording video...", Toast.LENGTH_SHORT).show()
 //            Toast.makeText(activity!!, "has permission!", Toast.LENGTH_SHORT).show()
         } else {
             requestCameraAudioPermissions()
@@ -262,12 +269,13 @@ class HomeFragment : Fragment(), View.OnClickListener {
         val savedTime = getTime()
         var mCountDownTimer: CountDownTimer = object : CountDownTimer(savedTime, 1000) {
             override fun onFinish() {
+                isTimerRunning = false
                 timerDisplay.setText(mSimpleDateFormat.format(0))
-                Toast.makeText(activity!!, "Time is up", Toast.LENGTH_SHORT).show()
                 sendHelp() // call sendHelp() if countdown timer is finished.
             }
 
             override fun onTick(millisUntilFinished: Long) {
+                isTimerRunning = true
                 timerDisplay.setText(mSimpleDateFormat.format(millisUntilFinished))
             }
         }
@@ -275,6 +283,23 @@ class HomeFragment : Fragment(), View.OnClickListener {
         Log.i("mCountDownTimer", "$mCountDownTimer")
 
         return mCountDownTimer
+    }
+
+    private fun showAlertDialog() {
+        val builder = AlertDialog.Builder(activity!!)
+        builder.setTitle("Are you sure you want to exit?")
+        builder.setMessage("By exiting while the timer is under countdown, we will send your rescue details immediately just to be safe.")
+
+        builder.setPositiveButton("Yes") { dialog, which ->
+            // to add send location & video
+            Toast.makeText(activity!!, "Rescue details have been sent to your contacts.", Toast.LENGTH_SHORT).show()
+        }
+
+        builder.setNegativeButton("No") { dialog, which ->
+            Toast.makeText(activity!!, "Please enter the correct passcode to stop the timer.", Toast.LENGTH_SHORT).show()
+        }
+
+        builder.show()
     }
 
     override fun onClick(v: View?) {
