@@ -2,7 +2,6 @@ package com.myapplication.rescueme
 
 import android.Manifest
 import android.app.AlertDialog
-import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
@@ -31,9 +30,13 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var v : View
 
     // video variables
-    private var delay : Long = 10000 // delay for 10s
+    private var duration = 10000 // duration of video in milliseconds
     private var VIDEO_PATH = ""
     private lateinit var videoView : VideoView
+    private val MEDIA_TYPE_IMAGE = 1
+    private val MEDIA_TYPE_VIDEO = 2
+    private lateinit var recorder : MediaRecorder
+    private var recordingStarted = false
 
     // countdown timer variables
     private lateinit var mCountDownTimer : CountDownTimer
@@ -53,19 +56,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
         })
 
         v = inflater.inflate(R.layout.fragment_home, container, false)
-
-        startCameraSession()
-//        val surfaceReadyCallback = object: SurfaceHolder.Callback {
-//            override fun surfaceChanged(p0: SurfaceHolder?, p1: Int, p2: Int, p3: Int) { }
-//            override fun surfaceDestroyed(p0: SurfaceHolder?) { }
-//
-//            override fun surfaceCreated(p0: SurfaceHolder?) {
-//                startCameraSession()
-//            }
-//        }
-//
-//        val surfaceView = v.findViewById<SurfaceView>(R.id.surfaceView)
-//        surfaceView.holder.addCallback(surfaceReadyCallback)
 
         val helpBtn = v.findViewById<Button>(R.id.helpBtn)
         helpBtn.setOnClickListener(this)
@@ -100,14 +90,10 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    override fun onRequestPermissionsResult(
-            requestCode: Int,
-            permissions: Array<out String>,
-            grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 222 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startVideoRecording()
+            sendHelp()
         }
     }
 
@@ -115,17 +101,12 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private fun sendHelp() {
         if (hasCameraAudioPermissions()) {
             // create & call a function that gets the user's location
-            startVideoRecording()
-            Toast.makeText(activity!!, "Recording video...", Toast.LENGTH_SHORT).show()
+            startCameraSession()
+//            Toast.makeText(activity!!, "Recording video...", Toast.LENGTH_SHORT).show()
         } else {
             requestCameraAudioPermissions()
         }
     }
-
-    // Figure out how to record video.
-
-    val MEDIA_TYPE_IMAGE = 1
-    val MEDIA_TYPE_VIDEO = 2
 
     /** Create a file Uri for saving an image or video */
     private fun getOutputMediaFileUri(type: Int): Uri {
@@ -134,21 +115,16 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     /** Create a File for saving an image or video */
     private fun getOutputMediaFile(type: Int): File? {
-        // To be safe, you should check that the SDCard is mounted
-        // using Environment.getExternalStorageState() before doing this.
-
         val mediaStorageDir = File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                "MyCameraApp"
+                "RescueMe"
         )
-        // This location works best if you want the created images to be shared
-        // between applications and persist after your app has been uninstalled.
 
         // Create the storage directory if it does not exist
         mediaStorageDir.apply {
             if (!exists()) {
                 if (!mkdirs()) {
-                    Log.d("MyCameraApp", "failed to create directory")
+                    Log.d("RescueMe", "failed to create directory")
                     return null
                 }
             }
@@ -164,6 +140,67 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 File("${mediaStorageDir.path}${File.separator}VID_$timeStamp.mp4")
             }
             else -> null
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    private fun startCameraSession() {
+        val surfaceView = v.findViewById<SurfaceView>(R.id.surfaceView)
+
+        val myCameraManager : CameraManager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        if (myCameraManager.cameraIdList.isEmpty()) {
+            Toast.makeText(activity!!, "No cameras", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val firstCamera = myCameraManager.cameraIdList[0]
+
+        try {
+            myCameraManager.openCamera(firstCamera, object : CameraDevice.StateCallback() {
+                override fun onDisconnected(p0: CameraDevice) {}
+                override fun onError(p0: CameraDevice, p1: Int) {}
+
+                override fun onOpened(cameraDevice: CameraDevice) {
+                    // use the camera
+                    startVideoRecording()
+                    val cameraCharacteristics = myCameraManager.getCameraCharacteristics(cameraDevice.id)
+
+                    cameraCharacteristics[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.let { streamConfigurationMap ->
+                        streamConfigurationMap.getOutputSizes(ImageFormat.YUV_420_888)?.let { yuvSizes ->
+                            val previewSize = yuvSizes.last()
+
+                            val displayRotation = activity!!.windowManager.defaultDisplay.rotation
+                            val swappedDimensions = areDimensionsSwapped(displayRotation, cameraCharacteristics)
+                            // swap width and height if needed
+                            val rotatedPreviewWidth = if (swappedDimensions) previewSize.height else previewSize.width
+                            val rotatedPreviewHeight = if (swappedDimensions) previewSize.width else previewSize.height
+
+                            surfaceView.holder.setFixedSize(rotatedPreviewWidth, rotatedPreviewHeight)
+
+                            val previewSurface = surfaceView.holder.surface
+
+                            val captureCallback = object : CameraCaptureSession.StateCallback() {
+                                override fun onConfigureFailed(session: CameraCaptureSession) {}
+
+                                override fun onConfigured(session: CameraCaptureSession) {
+                                    // session configured
+                                    val previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+                                            .apply {
+                                                addTarget(previewSurface)
+                                            }
+                                    session.setRepeatingRequest(
+                                            previewRequestBuilder.build(),
+                                            object : CameraCaptureSession.CaptureCallback() {},
+                                            Handler { true }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }, Handler { true })
+        } catch (e: SecurityException) {
+            Log.i("security exception", e.message)
         }
     }
 
@@ -189,89 +226,14 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun startCameraSession() {
-        val surfaceView = v.findViewById<SurfaceView>(R.id.surfaceView)
-
-        val myCameraManager : CameraManager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        if (myCameraManager.cameraIdList.isEmpty()) {
-            Toast.makeText(activity!!, "No cameras", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val firstCamera = myCameraManager.cameraIdList[0]
-
-        try {
-            myCameraManager.openCamera(firstCamera, object: CameraDevice.StateCallback() {
-                override fun onDisconnected(p0: CameraDevice) { }
-                override fun onError(p0: CameraDevice, p1: Int) { }
-
-                override fun onOpened(cameraDevice: CameraDevice) {
-                    // use the camera
-                    val cameraCharacteristics =  myCameraManager.getCameraCharacteristics(cameraDevice.id)
-
-                    cameraCharacteristics[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.let { streamConfigurationMap ->
-                        streamConfigurationMap.getOutputSizes(ImageFormat.YUV_420_888)?.let { yuvSizes ->
-                            val previewSize = yuvSizes.last()
-
-                            val displayRotation = activity!!.windowManager.defaultDisplay.rotation
-                            val swappedDimensions = areDimensionsSwapped(displayRotation, cameraCharacteristics)
-                            // swap width and height if needed
-                            val rotatedPreviewWidth = if (swappedDimensions) previewSize.height else previewSize.width
-                            val rotatedPreviewHeight = if (swappedDimensions) previewSize.width else previewSize.height
-
-                            surfaceView.holder.setFixedSize(rotatedPreviewWidth, rotatedPreviewHeight)
-
-                            val previewSurface = surfaceView.holder.surface
-
-                            val captureCallback = object : CameraCaptureSession.StateCallback()
-                            {
-                                override fun onConfigureFailed(session: CameraCaptureSession) {}
-
-                                override fun onConfigured(session: CameraCaptureSession) {
-                                    // session configured
-                                    val previewRequestBuilder =   cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                                            .apply {
-                                                addTarget(previewSurface)
-                                            }
-                                    session.setRepeatingRequest(
-                                            previewRequestBuilder.build(),
-                                            object: CameraCaptureSession.CaptureCallback() {},
-                                            Handler { true }
-                                    )
-                                }
-                            }
-
-                            cameraDevice.createCaptureSession(mutableListOf(previewSurface), captureCallback, Handler { true })
-
-                            val surfaceReadyCallback = object: SurfaceHolder.Callback {
-                                override fun surfaceChanged(p0: SurfaceHolder?, p1: Int, p2: Int, p3: Int) { }
-                                override fun surfaceDestroyed(p0: SurfaceHolder?) { }
-
-                                override fun surfaceCreated(p0: SurfaceHolder?) {
-                                    startCameraSession()
-                                }
-                            }
-
-                            surfaceView.holder.addCallback(surfaceReadyCallback)
-                        }
-                    }
-                }
-            }, Handler { true })
-        } catch (e : SecurityException) {
-            Log.i("security exception", e.message)
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun startVideoRecording() {
-//        VIDEO_PATH = activity!!.filesDir.absolutePath + "/test.mp4"
         try {
             VIDEO_PATH = getOutputMediaFile(MEDIA_TYPE_VIDEO).toString()
         } catch (e: Exception) {
             Log.i("VIDEO_PATH error", e.message)
         }
 
-        val recorder = MediaRecorder()
+        recorder = MediaRecorder()
 
         // set audio and video source
         recorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
@@ -280,21 +242,13 @@ class HomeFragment : Fragment(), View.OnClickListener {
         // set profile
         recorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P))
 
-        // set output format
-//        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-
-        // set audio and video encoder
-//        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-//        recorder.setVideoEncoder(MediaRecorder.VideoEncoder.MPEG_4_SP)
-
         // set output file
         recorder.setOutputFile(VIDEO_PATH)
 
+        recorder.setMaxDuration(duration)
 
         recorder.setPreviewDisplay(v.findViewById<SurfaceView>(R.id.surfaceView).holder.surface)
         recorder.prepare()
-
-        var recordingStarted : Boolean
 
         try {
             recorder.start()
@@ -306,23 +260,25 @@ class HomeFragment : Fragment(), View.OnClickListener {
             Toast.makeText(activity!!, "Recording did not start.", Toast.LENGTH_SHORT).show()
         }
 
-        // check if recording started before calling recorder.stop(), otherwise will crash.
-        if (recordingStarted) {
-            val handler = Handler()
-            handler.postDelayed(
-                    {
-                        recorder.stop()
-                        recorder.reset()
-                        recorder.release()
-                        videoView = activity!!.findViewById<VideoView>(R.id.videoView)
-                        videoView.visibility = View.VISIBLE
-                        Toast.makeText(activity!!, "Video has stopped recording.", Toast.LENGTH_SHORT).show()
-                    }, delay
-            )
-        } else {
-            Toast.makeText(activity!!, "recorder.stop() not called since recorder.start() not working.", Toast.LENGTH_SHORT).show()
-        }
+        // if max duration reached, stop recording.
+        recorder.setOnInfoListener(object : MediaRecorder.OnInfoListener {
+            override fun onInfo(mr: MediaRecorder?, what: Int, extra: Int) {
+                if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
+                    stopVideoRecording()
+                }
+            }
+        })
+    }
 
+    // stops video recording
+    private fun stopVideoRecording() {
+        recorder.stop()
+        recorder.reset()
+        recorder.release()
+        videoView = activity!!.findViewById<VideoView>(R.id.videoView)
+        videoView.visibility = View.VISIBLE
+        Toast.makeText(activity!!, "Video has stopped recording.", Toast.LENGTH_SHORT).show()
+        recordingStarted = false
     }
 
     // for testing.
@@ -338,7 +294,10 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // temp trigger via button click. Once we have audio detected, then can shift this function.
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun startTimer() {
+        startCameraSession()
+        Toast.makeText(activity!!, "Recording video...", Toast.LENGTH_SHORT).show()
         mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         if (v != null) {
@@ -385,20 +344,16 @@ class HomeFragment : Fragment(), View.OnClickListener {
             val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
             val enterPasscodeString = enterPasscodeEditText.text.toString()
             if (isCorrectPasscode(enterPasscodeString)) {
+                // check if recording started before calling stopVideoRecording(), otherwise will crash.
+                if (recordingStarted) {
+                    stopVideoRecording()
+                }
                 stopTimer()
-                Toast.makeText(
-                        activity!!,
-                        "Correct passcode entered. Timer has stopped.",
-                        Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(activity!!, "Correct passcode entered. Timer has stopped.", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(
-                        activity!!,
-                        "Incorrect passcode entered. Please try again.",
-                        Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(activity!!, "Incorrect passcode entered. Please try again.", Toast.LENGTH_SHORT).show()
             }
-
+            enterPasscodeEditText.text = null
         } else {
             Log.i("View v", "v is null.")
         }
@@ -457,7 +412,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
             override fun onFinish() {
                 isTimerRunning = false
                 timerDisplay.setText(mSimpleDateFormat.format(0))
-                sendHelp() // call sendHelp() if countdown timer is finished.
+//                sendHelp() // call sendHelp() if countdown timer is finished.
             }
 
             override fun onTick(millisUntilFinished: Long) {
