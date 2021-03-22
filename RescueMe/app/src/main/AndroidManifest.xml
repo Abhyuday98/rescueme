@@ -12,6 +12,8 @@
         android:name="android.hardware.camera"
         android:required="true" />
 
+    <uses-feature android:name="android.hardware.camera2.full"/>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
