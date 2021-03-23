@@ -28,6 +28,10 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Service START
+        intent = Intent(this, MyService::class.java)
+        startService(intent)
+        //
         setupContactsList()
 
         // temporarily just remove based on item click
