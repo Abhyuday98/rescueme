@@ -1,6 +1,7 @@
 package com.myapplication.rescueme
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Camera
 import android.media.MediaRecorder
@@ -65,7 +66,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 supportFragmentManager.beginTransaction().replace(R.id.fragment_container, PasscodeFragment()).commit()
             }
             R.id.rescue_tab -> {
-                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, RescueFragment()).commit()
+//                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, RescueFragment()).commit()
+                val it = Intent(this, RescueActivity::class.java)
+                startActivity(it)
             }
         }
 
