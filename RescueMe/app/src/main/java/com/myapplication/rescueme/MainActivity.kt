@@ -9,6 +9,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.myapplication.rescueme.databinding.ActivityMainBinding
 import java.io.File
 import java.io.PrintStream
@@ -17,7 +18,7 @@ import kotlin.collections.ArrayList
 
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var binding:ActivityMainBinding
+    private lateinit var binding: ActivityMainBinding
     private val PICK_CONTACT = 1
 
     private lateinit var myAdapter: ContactAdapter
@@ -43,6 +44,11 @@ class MainActivity : AppCompatActivity() {
             val it = Intent(this, HomeActivity::class.java)
             startActivity(it)
         }
+
+        // start service
+        val intent = Intent(this, MyService::class.java)
+        startService(intent)
+
     }
 
     private fun rewrite() {
@@ -85,7 +91,7 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(it, PICK_CONTACT);
     }
 
-    private fun hasReadContactsPermission() : Boolean {
+    private fun hasReadContactsPermission(): Boolean {
         return (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
     }
 
