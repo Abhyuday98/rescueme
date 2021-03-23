@@ -4,10 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-
-class MyService : Service(), LifecycleOwner {
+class MyService : Service() {
     val TAG = "MyService"
     override fun onBind(intent: Intent): IBinder {
         TODO("Return the communication channel to the service.")
@@ -18,18 +15,18 @@ class MyService : Service(), LifecycleOwner {
 
         val runnable = Runnable {
             // transfer to service start
-            var soundClassifier: SoundClassifier = SoundClassifier(this)
-                    .also {
-                it.lifecycleOwner = this
-            }
-            soundClassifier.start()
-            Log.i("sound", "Hello")
-
-            var labelName = soundClassifier.labelList[1] // e.g. "No"
-            soundClassifier.probabilities.observe(this) { resultMap ->
-                var probability = resultMap[labelName] // e.g. 0.7
-                Log.i("sound", "$labelName -> ${probability.toString()}")
-            }
+//            var soundClassifier: SoundClassifier = SoundClassifier(this)
+//                    .also {
+//                it.lifecycleOwner = this
+//            }
+//            soundClassifier.start()
+//            Log.i("sound", "Hello")
+//
+//            var labelName = soundClassifier.labelList[1] // e.g. "No"
+//            soundClassifier.probabilities.observe(this) { resultMap ->
+//                var probability = resultMap[labelName] // e.g. 0.7
+//                Log.i("sound", "$labelName -> ${probability.toString()}")
+//            }
             // transfer to service end
 
 
@@ -48,8 +45,7 @@ class MyService : Service(), LifecycleOwner {
         Log.d(TAG, message)
     }
 
-    override fun getLifecycle(): Lifecycle {
-
-//        TODO("Not yet implemented")
-    }
+//    override fun getLifecycle(): Lifecycle {
+//
+//    }
 }

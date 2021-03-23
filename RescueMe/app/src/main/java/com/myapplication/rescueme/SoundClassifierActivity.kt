@@ -13,17 +13,17 @@ class SoundClassifierActivity : AppCompatActivity() {
         intent = Intent(this, MyService::class.java)
         startService(intent)
         // transfer to service start
-//        var soundClassifier: SoundClassifier = SoundClassifier(this).also {
-//            it.lifecycleOwner = this
-//        }
-//        soundClassifier.start()
-//        Log.i("sound", "Hello")
-//
-//        var labelName = soundClassifier.labelList[1] // e.g. "No"
-//        soundClassifier.probabilities.observe(this) { resultMap ->
-//            var probability = resultMap[labelName] // e.g. 0.7
-//            Log.i("sound", "$labelName -> ${probability.toString()}")
-//        }
+        var soundClassifier: SoundClassifier = SoundClassifier(this).also {
+            it.lifecycleOwner = this
+        }
+        soundClassifier.start()
+        Log.i("sound", "Hello")
+
+        var labelName = soundClassifier.labelList[1] // e.g. "No"
+        soundClassifier.probabilities.observe(this) { resultMap ->
+            var probability = resultMap[labelName] // e.g. 0.7
+            Log.i("sound", "$labelName -> ${probability.toString()}")
+        }
         // transfer to service end
 
     }
