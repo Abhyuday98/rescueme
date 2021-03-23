@@ -1,14 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/white"
+    android:orientation="vertical"
+    android:gravity="center|top">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Timer Fragment"
+        android:text="Set countdown timer"
         android:textSize="30sp"
-        android:layout_centerInParent="true" />
+        android:layout_marginTop="20dp"/>
 
-</RelativeLayout>
+    <TextView
+        android:id="@+id/currentTimerTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Current timer is:"
+        android:textSize="20sp"
+        android:layout_marginTop="20dp"/>
+
+    <EditText
+        android:id="@+id/timeEditText"
+        android:layout_width="wrap_content"
+        android:layout_height="45dp"
+        android:inputType="number"
+        android:hint="Enter the time in minutes."
+        android:textSize="16sp"
+        android:layout_marginTop="20dp"/>
+
+    <Button
+        android:id="@+id/saveTimeButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save"
+        android:textAllCaps="false"
+        android:layout_marginTop="20dp"/>
+
+</LinearLayout>

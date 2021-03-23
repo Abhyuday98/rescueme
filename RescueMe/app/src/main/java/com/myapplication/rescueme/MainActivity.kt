@@ -72,7 +72,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun goToContacts() {
+    fun goToContacts(view: View) {
         if (hasReadContactsPermission()) {
             pickContact()
         } else {
