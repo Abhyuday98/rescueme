@@ -398,8 +398,11 @@ class SoundClassifier2(context: Context) {
                 Log.i("sound", probList.toString())
 //                val intent = Intent(this, MyService::class.java)
 //                startService(intent)
-                _probabilities.postValue(labelList.zip(probList).toMap())
 
+                // Do something and then stop thread
+
+                //
+                _probabilities.postValue(labelList.zip(probList).toMap())
                 latestPredictionLatencyMs = ((SystemClock.elapsedRealtimeNanos() - t0) / 1e6).toFloat()
             }
         }
