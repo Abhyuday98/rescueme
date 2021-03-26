@@ -29,7 +29,8 @@ class MyService : Service() {
 //            }
             // transfer to service end
 
-
+            var soundClassifier2 = SoundClassifier2(this)
+            soundClassifier2.start()
             for (i in 1..10) {
                 Log.i("sound", "Service doing something. ${i.toString()}")
                 ShowLog("Service doing something.$i")
