@@ -202,8 +202,8 @@ class MainActivity : AppCompatActivity() {
         showButton()
     }
 
-    fun goToPasscodeActivity(view: View) {
-        val it = Intent(this, FirstPasscodeActivity::class.java)
+    fun goToUserContactActivity(view: View) {
+        val it = Intent(this, UserContactActivity::class.java)
         startActivity(it)
     }
 
