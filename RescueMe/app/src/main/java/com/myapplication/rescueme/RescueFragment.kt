@@ -1,5 +1,6 @@
 package com.myapplication.rescueme
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -17,13 +18,22 @@ class RescueFragment : Fragment(), View.OnClickListener {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         v = inflater.inflate(R.layout.fragment_rescue, container, false)
 
+        val activateButton = v.findViewById<Button>(R.id.activateButton)
+        activateButton.setOnClickListener(this)
+
         return v
     }
 
     override fun onClick(v: View?) {
         when (v!!.id) {
             // Whatever id -> call function you want
+            R.id.activateButton -> activateLocationAR()
         }
+    }
+
+    private fun activateLocationAR() {
+        val it = Intent(activity!!, RescueActivity::class.java)
+        startActivity(it)
     }
 
 }
