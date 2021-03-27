@@ -20,7 +20,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.RescueMe">
-        <activity android:name=".RescueActivity"></activity>
+        <activity android:name=".UserContactActivity"></activity>
+        <activity android:name=".RescueActivity" />
         <activity
             android:name=".FirstPasscodeActivity"
             android:configChanges="orientation|screenSize"
