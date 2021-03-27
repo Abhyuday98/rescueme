@@ -19,30 +19,48 @@ import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import java.io.File
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.*
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.api.GoogleApiClient
+import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks
+import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
 
 
-class HomeFragment : Fragment(), View.OnClickListener {
-    private lateinit var v : View
+class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnConnectionFailedListener {
+    private lateinit var v: View
 
     // video variables
     private var duration = 10000 // duration of video in milliseconds
     private var VIDEO_PATH = ""
-    private lateinit var videoView : VideoView
+    private lateinit var videoView: VideoView
     private val MEDIA_TYPE_IMAGE = 1
     private val MEDIA_TYPE_VIDEO = 2
-    private lateinit var recorder : MediaRecorder
+    private lateinit var recorder: MediaRecorder
     private var recordingStarted = false
 
     // countdown timer variables
-    private lateinit var mCountDownTimer : CountDownTimer
+    private lateinit var mCountDownTimer: CountDownTimer
     var mSimpleDateFormat: SimpleDateFormat = SimpleDateFormat("HH:mm:ss")
     private lateinit var timerDisplay: TextView
     private var isTimerRunning = false
+
+    // location variables
+    private lateinit var mLocationRequest: LocationRequest
+    private  var mGoogleApiClient: GoogleApiClient? = null
+    private lateinit var mFusedLocationClient: FusedLocationProviderClient
+    private var latitude = 0.toDouble()
+    private var longitude = 0.toDouble()
+
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -54,6 +72,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 }
             }
         })
+
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(activity!!)
 
         v = inflater.inflate(R.layout.fragment_home, container, false)
 
@@ -74,18 +94,24 @@ class HomeFragment : Fragment(), View.OnClickListener {
         return v
     }
 
-    private fun hasCameraAudioPermissions() : Boolean {
+    private fun hasRequiredPermissions(): Boolean {
         return ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED
 
     }
 
-    private fun requestCameraAudioPermissions() {
+    private fun requestRequiredPermissions() {
         ActivityCompat.requestPermissions(
-                activity!!, arrayOf(
+            activity!!, arrayOf(
                 Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.CAMERA
-        ), 222
+                Manifest.permission.CAMERA,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.INTERNET
+            ), 222
         )
     }
 
@@ -99,13 +125,73 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun sendHelp() {
-        if (hasCameraAudioPermissions()) {
-            // create & call a function that gets the user's location
+        if (hasRequiredPermissions()) {
+            // gets the user's location
+            if (mGoogleApiClient == null) {
+                buildGoogleApiClient()
+            }
             startCameraSession()
-//            Toast.makeText(activity!!, "Recording video...", Toast.LENGTH_SHORT).show()
         } else {
-            requestCameraAudioPermissions()
+            requestRequiredPermissions()
         }
+    }
+
+    public override fun onPause() {
+        super.onPause()
+
+        //stop location updates when Activity is no longer active
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback)
+    }
+
+    @Synchronized
+    private fun buildGoogleApiClient() {
+        mGoogleApiClient = GoogleApiClient.Builder(activity!!)
+            .addConnectionCallbacks(this)
+            .addOnConnectionFailedListener(this)
+            .addApi(LocationServices.API)
+            .build()
+        mGoogleApiClient!!.connect()
+
+    }
+
+    override fun onConnected(bundle: Bundle?) {
+        mLocationRequest = LocationRequest()
+        mLocationRequest.setInterval(3000) // three second interval
+        mLocationRequest.setFastestInterval(3000)
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+        if (ContextCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+            mFusedLocationClient.requestLocationUpdates(
+                mLocationRequest,
+                mLocationCallback,
+                Looper.myLooper()
+            )
+//            Toast.makeText(activity, "CONNECTED!", Toast.LENGTH_SHORT).show() // for testing
+        }
+    }
+
+    var mLocationCallback: LocationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            Log.i("MapsActivity", "LocationCallBack()")
+            for (location in locationResult.getLocations()) {
+                latitude = location.latitude
+                longitude = location.longitude
+
+                val msg = "Updated Location: ${location.latitude}, ${location.longitude}"
+                Log.i(
+                    "MapsActivity",
+                    "<Latitude, Longitude> " + "<" + location.latitude + "," + location.longitude + ">"
+                )
+            }
+        }
+    }
+
+    override fun onConnectionSuspended(i: Int) {
+
+    }
+
+    override fun onConnectionFailed(connectionResult: ConnectionResult) {
+
     }
 
     /** Create a file Uri for saving an image or video */
@@ -116,8 +202,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
     /** Create a File for saving an image or video */
     private fun getOutputMediaFile(type: Int): File? {
         val mediaStorageDir = File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                "RescueMe"
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+            "RescueMe"
         )
 
         // Create the storage directory if it does not exist
@@ -146,8 +232,10 @@ class HomeFragment : Fragment(), View.OnClickListener {
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun startCameraSession() {
         val surfaceView = v.findViewById<SurfaceView>(R.id.surfaceView)
+        surfaceView.visibility = View.VISIBLE
 
-        val myCameraManager : CameraManager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val myCameraManager: CameraManager =
+            activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         if (myCameraManager.cameraIdList.isEmpty()) {
             Toast.makeText(activity!!, "No cameras", Toast.LENGTH_SHORT).show()
             return
@@ -175,32 +263,38 @@ class HomeFragment : Fragment(), View.OnClickListener {
                             val rotatedPreviewWidth = if (swappedDimensions) previewSize.height else previewSize.width
                             val rotatedPreviewHeight = if (swappedDimensions) previewSize.width else previewSize.height
 
-                            surfaceView.holder.setFixedSize(rotatedPreviewWidth, rotatedPreviewHeight)
+                            surfaceView.holder.setFixedSize(
+                                rotatedPreviewWidth,
+                                rotatedPreviewHeight
+                            )
 
                             val previewSurface = surfaceView.holder.surface
 
                             val captureCallback = object : CameraCaptureSession.StateCallback() {
-                                override fun onConfigureFailed(session: CameraCaptureSession) {}
+                                    override fun onConfigureFailed(session: CameraCaptureSession) {}
 
-                                override fun onConfigured(session: CameraCaptureSession) {
-                                    // session configured
-                                    val previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                                            .apply {
-                                                addTarget(previewSurface)
-                                            }
-                                    session.setRepeatingRequest(
+                                    override fun onConfigured(session: CameraCaptureSession) {
+                                        // session configured
+                                        val previewRequestBuilder =
+                                            cameraDevice.createCaptureRequest(
+                                                CameraDevice.TEMPLATE_PREVIEW
+                                            )
+                                                .apply {
+                                                    addTarget(previewSurface)
+                                                }
+                                        session.setRepeatingRequest(
                                             previewRequestBuilder.build(),
                                             object : CameraCaptureSession.CaptureCallback() {},
                                             Handler { true }
-                                    )
-                                }
+                                        )
+                                    }
                             }
                         }
                     }
                 }
             }, Handler { true })
-        } catch (e: SecurityException) {
-            Log.i("security exception", e.message)
+            } catch (e: SecurityException) {
+                Log.i("security exception", e.message)
         }
     }
 
@@ -209,12 +303,18 @@ class HomeFragment : Fragment(), View.OnClickListener {
         var swappedDimensions = false
         when (displayRotation) {
             Surface.ROTATION_0, Surface.ROTATION_180 -> {
-                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 90 || cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 270) {
+                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 90 || cameraCharacteristics.get(
+                        CameraCharacteristics.SENSOR_ORIENTATION
+                    ) == 270
+                ) {
                     swappedDimensions = true
                 }
             }
             Surface.ROTATION_90, Surface.ROTATION_270 -> {
-                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 0 || cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 180) {
+                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 0 || cameraCharacteristics.get(
+                        CameraCharacteristics.SENSOR_ORIENTATION
+                    ) == 180
+                ) {
                     swappedDimensions = true
                 }
             }
@@ -279,15 +379,14 @@ class HomeFragment : Fragment(), View.OnClickListener {
         videoView.visibility = View.VISIBLE
         Toast.makeText(activity!!, "Video has stopped recording.", Toast.LENGTH_SHORT).show()
         recordingStarted = false
+
+        val surfaceView = v.findViewById<SurfaceView>(R.id.surfaceView)
+        surfaceView.visibility = View.GONE
     }
 
     // for testing.
     private fun clickVideo() {
-        Toast.makeText(
-                activity!!,
-                "Video has been clicked. Video path is $VIDEO_PATH",
-                Toast.LENGTH_LONG
-        ).show()
+        Toast.makeText(activity!!, "Video has been clicked. Video path is $VIDEO_PATH", Toast.LENGTH_LONG).show()
         val videoView = activity!!.findViewById<VideoView>(R.id.videoView)
         videoView.setVideoPath(VIDEO_PATH)
         videoView.start()
@@ -349,9 +448,17 @@ class HomeFragment : Fragment(), View.OnClickListener {
                     stopVideoRecording()
                 }
                 stopTimer()
-                Toast.makeText(activity!!, "Correct passcode entered. Timer has stopped.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    activity!!,
+                    "Correct passcode entered. Timer has stopped.",
+                    Toast.LENGTH_SHORT
+                ).show()
             } else {
-                Toast.makeText(activity!!, "Incorrect passcode entered. Please try again.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    activity!!,
+                    "Incorrect passcode entered. Please try again.",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             enterPasscodeEditText.text = null
         } else {
@@ -369,7 +476,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // compares the entered hashed passcode wih the one saved in file
-    private fun isCorrectPasscode(passcodeString: String) : Boolean {
+    private fun isCorrectPasscode(passcodeString: String): Boolean {
         var originalPasscode = ""
         val hashedOldPasscode = passcodeString.toMD5()
 
@@ -387,7 +494,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // Get saved time. If for some reason no time is saved, default is 3 minutes.
-    private fun getTime() : Long {
+    private fun getTime(): Long {
         var mMilliseconds = 0.toLong()
 
         if (fileExist("time.txt")) {
@@ -405,14 +512,14 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // returns CountDownTimer object with the milliseconds read from time.txt
-    private fun createCountDownTimer() : CountDownTimer {
+    private fun createCountDownTimer(): CountDownTimer {
         val savedTime = getTime()
         var mCountDownTimer: CountDownTimer = object : CountDownTimer(savedTime, 1000) {
             @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
             override fun onFinish() {
                 isTimerRunning = false
                 timerDisplay.setText(mSimpleDateFormat.format(0))
-//                sendHelp() // call sendHelp() if countdown timer is finished.
+    //                sendHelp() // call sendHelp() if countdown timer is finished.
             }
 
             override fun onTick(millisUntilFinished: Long) {
@@ -433,11 +540,19 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
         builder.setPositiveButton("Yes") { dialog, which ->
             // to add send location & video
-            Toast.makeText(activity!!, "Rescue details have been sent to your contacts.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                activity!!,
+                "Rescue details have been sent to your contacts.",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         builder.setNegativeButton("No") { dialog, which ->
-            Toast.makeText(activity!!, "Please enter the correct passcode to stop the timer.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                activity!!,
+                "Please enter the correct passcode to stop the timer.",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         builder.show()
