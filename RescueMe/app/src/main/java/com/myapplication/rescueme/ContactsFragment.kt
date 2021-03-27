@@ -32,8 +32,6 @@ class ContactsFragment : Fragment(), View.OnClickListener {
     private lateinit var v: View
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-//        val v = inflater.inflate(R.layout.fragment_home, container, false)
-
         v = inflater.inflate(R.layout.fragment_contacts, container, false)
         setupContactsList()
 
@@ -42,8 +40,6 @@ class ContactsFragment : Fragment(), View.OnClickListener {
         } else {
             Log.i("View v", "v is not null")
         }
-
-//        onViewCreated(v, savedInstanceState)
 
         // temporarily just remove based on item click
         val contactsListView = v.findViewById<ListView>(R.id.contactsListView)
