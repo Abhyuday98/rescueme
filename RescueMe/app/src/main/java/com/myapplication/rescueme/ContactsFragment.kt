@@ -148,9 +148,11 @@ class ContactsFragment : Fragment(), View.OnClickListener {
                         Toast.makeText(activity!!, "Name: $contactName, PhoneNumber: $contactNumber", Toast.LENGTH_LONG).show()
                     }
                     cursor2.close()
+                    cursor1.close()
+                    writeFile(details)
+                } else {
+                    Toast.makeText(activity!!, "This contact does not have a number. Please choose another contact!", Toast.LENGTH_SHORT).show()
                 }
-                cursor1.close()
-                writeFile(details)
             }
         }
     }
