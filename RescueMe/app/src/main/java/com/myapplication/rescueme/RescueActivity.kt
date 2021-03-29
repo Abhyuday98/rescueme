@@ -105,14 +105,17 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
         val myRef = database.getReference("RescueRecords")
 
         // update records
-//        var newRecord: HashMap<String, Int> = hashMapOf("Created" to 1615994024, "Lat" to 12, "Lng" to 12, "Rescuer" to 99999996, "Victim" to 99999995)
+//        var myNum = 99999995
+//        var newRecord: HashMap<String, Int> = hashMapOf("Created" to 1615994024, "Lat" to 12, "Lng" to 12, "Rescuer" to 99999996, "Victim" to myNum)
 //        var updatedRecords = arrayListOf<HashMap<*,*>>(newRecord)
 //        myRef.get().addOnSuccessListener {
 //            var data = it.value
 //            if (data != null && data is ArrayList<*>) {
 //                for (record in data) {
 //                    if (record is HashMap<*,*>) {
-//                        updatedRecords.add(record)
+//                        if (record["Victim"] != myNum.toLong()) {
+//                            updatedRecords.add(record)
+//                        }
 //                    }
 //                }
 //                myRef.setValue(updatedRecords)
