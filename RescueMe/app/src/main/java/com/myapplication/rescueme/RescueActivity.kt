@@ -34,9 +34,13 @@ import com.myapplication.rescueme.model.getPositionVector
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import java.io.IOException
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class RescueActivity : AppCompatActivity(), SensorEventListener {
     private val TAG = "LocationActivity"
+    private lateinit var myNum: Int
 
     private lateinit var arFragment: PlacesArFragment
     private lateinit var mapFragment: SupportMapFragment
@@ -131,7 +135,11 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
         //read records
         myRef.get().addOnSuccessListener {
             var data = it.value
-            var myNum = 99999997
+            val scan = Scanner(openFileInput("my_contact.txt"))
+            while(scan.hasNextLine()) {
+                myNum = scan.nextLine().substring(3).toInt()
+            }
+
             var isNeedHelp = false
 //            Log.i("firebase", "sad ${data!!::class.simpleName}")
             Log.i("firebase", "Got value ${it.value}")
@@ -143,6 +151,8 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
                         if (record["Rescuer"] == myNum.toLong()) {
 
                             var victimPhoneNum = record["Victim"].toString()
+
+                            //change to be able to handle multiple locs
                             wantedLoc = Place("wantedLoc", "", victimPhoneNum, Geometry(GeometryLocation(record["Lat"] as Double, record["Lng"] as Double)))
                             isNeedHelp = true
                             Toast.makeText(this, "Location added! Tap a plane to load location.", Toast.LENGTH_LONG).show()
