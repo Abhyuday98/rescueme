@@ -22,7 +22,7 @@
         <item
             android:id="@+id/mycontact_setting"
             android:icon="@drawable/ic_mycontact"
-            android:title="Change My Contact" />
+            android:title="My Contact" />
 
         <item
             android:id="@+id/passcode_setting"
