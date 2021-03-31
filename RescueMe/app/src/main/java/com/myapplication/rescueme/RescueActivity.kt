@@ -40,7 +40,7 @@ import kotlin.collections.HashMap
 
 class RescueActivity : AppCompatActivity(), SensorEventListener {
     private val TAG = "LocationActivity"
-    private lateinit var myNum: Int
+    private var myNum: Int = 0
 
     private lateinit var arFragment: PlacesArFragment
     private lateinit var mapFragment: SupportMapFragment
@@ -104,6 +104,7 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
         sensorManager.unregisterListener(this)
     }
 
+    // use this to send to firebase
     private fun writeToDB() {
         val database = Firebase.database
         val myRef = database.getReference("RescueRecords")
