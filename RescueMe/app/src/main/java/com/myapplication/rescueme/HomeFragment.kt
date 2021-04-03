@@ -3,16 +3,20 @@ package com.myapplication.rescueme
 import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Context.LOCATION_SERVICE
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
+import android.location.LocationManager
 import android.media.CamcorderProfile
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.*
+import android.provider.Settings
 import android.util.Log
 import android.view.*
 import android.widget.*
@@ -20,6 +24,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
@@ -65,11 +70,7 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
 
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // onbackpressed logic
         activity?.onBackPressedDispatcher?.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -80,6 +81,7 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
         })
 
         requestRequiredPermissions()
+        checkGPS()
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(activity!!)
 
@@ -127,6 +129,27 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
                 Manifest.permission.INTERNET
             ), 222
         )
+    }
+
+    private fun checkGPS() {
+        val manager = activity!!.getSystemService(LOCATION_SERVICE) as LocationManager?
+        if (!manager!!.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            buildAlertMessageNoGps()
+        }
+    }
+
+    private fun buildAlertMessageNoGps() {
+        val builder = AlertDialog.Builder(activity!!)
+        builder.setMessage("Your location is off. Please enable it for the app to work properly.")
+            .setCancelable(false)
+            .setPositiveButton(
+                "Ok"
+            ) { dialog, id -> startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }
+            .setNegativeButton(
+                "Cancel"
+            ) { dialog, id -> dialog.cancel() }
+        val alert = builder.create()
+        alert.show()
     }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
