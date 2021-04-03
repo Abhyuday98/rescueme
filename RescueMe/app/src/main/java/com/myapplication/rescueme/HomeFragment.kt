@@ -24,7 +24,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
@@ -41,7 +40,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-
 
 class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnConnectionFailedListener {
     private lateinit var v: View
@@ -179,11 +177,26 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
     }
 
     private fun sendHelp() {
+        updateRescueDetails()
+        uploadVideo()
+
+//        val intent = Intent(activity!!, MyService::class.java)
+//        activity!!.startService(intent)
+
+        Toast.makeText(activity!!, "Rescue details successfully sent!", Toast.LENGTH_SHORT).show()
+    }
+
+    // to be placed within background
+    private fun updateRescueDetails() {
         val victimDetails = getVictimDetails()
         val rescuerDetails = getRescuerDetails()
 
         val victimName = victimDetails[0]
         val victimNum = victimDetails[1]
+
+        val database = Firebase.database
+        val myRef = database.getReference("RescueRecords")
+        myRef.child(victimNum).removeValue()
 
         // loop through rescuer hashmap
         for ((id, details) in rescuerDetails) {
@@ -194,10 +207,6 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
 
             writeToDB(latitude, longitude, victimName, victimNum, rescuerName, rescuerNum)
         }
-
-        uploadVideo()
-
-        Toast.makeText(activity!!, "Rescue details successfully sent!", Toast.LENGTH_SHORT).show()
     }
 
     // get victim name and number in the form of arraylist: [name, number]
@@ -341,6 +350,7 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
                     "MapsActivity",
                     "<Latitude, Longitude> " + "<" + location.latitude + "," + location.longitude + ">"
                 )
+                updateRescueDetails()
             }
         }
     }
@@ -718,21 +728,13 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
         builder.setMessage("By exiting while the timer is under countdown, we will send your rescue details immediately just to be safe.")
 
         builder.setPositiveButton("Yes") { dialog, which ->
-            // to add send location & video
-            // to allow user to close activity
-            Toast.makeText(
-                activity!!,
-                "Rescue details have been sent to your contacts.",
-                Toast.LENGTH_SHORT
-            ).show()
+            sendHelp()
+            // To do: allow user to close activity
+            Toast.makeText(activity!!,"Rescue details have been sent to your contacts.", Toast.LENGTH_SHORT).show()
         }
 
         builder.setNegativeButton("No") { dialog, which ->
-            Toast.makeText(
-                activity!!,
-                "Please enter the correct passcode to stop the timer.",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(activity!!, "Please enter the correct passcode to stop the timer.", Toast.LENGTH_SHORT).show()
         }
 
         builder.show()
