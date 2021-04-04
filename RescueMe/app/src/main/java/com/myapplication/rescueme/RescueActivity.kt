@@ -40,7 +40,8 @@ import kotlin.collections.HashMap
 
 class RescueActivity : AppCompatActivity(), SensorEventListener {
     private val TAG = "LocationActivity"
-    private var myNum: Int = 0
+    private var myNum: String = ""
+    private var myName: String = ""
 
     private lateinit var arFragment: PlacesArFragment
     private lateinit var mapFragment: SupportMapFragment
@@ -77,7 +78,7 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
         sensorManager = getSystemService()!!
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        writeToDB()
+        setUp()
     }
 
 
@@ -104,73 +105,19 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
         sensorManager.unregisterListener(this)
     }
 
-    // use this to send to firebase
-    private fun writeToDB() {
-        val database = Firebase.database
-        val myRef = database.getReference("RescueRecords")
+    private fun setUp() {
+        val extras = intent.extras
+        if (extras != null) {
+            var name = ""
+            name = extras.getString("name")!!
+            val lat = extras.getDouble("lat")
+            val lng = extras.getDouble("lng")
 
-        // update records
-//        var myNum = 99999995
-//        var newRecord: HashMap<String, Int> = hashMapOf("Created" to 1615994024, "Lat" to 12, "Lng" to 12, "Rescuer" to 99999996, "Victim" to myNum)
-//        var updatedRecords = arrayListOf<HashMap<*,*>>(newRecord)
-//        myRef.get().addOnSuccessListener {
-//            var data = it.value
-//            if (data != null && data is ArrayList<*>) {
-//                for (record in data) {
-//                    if (record is HashMap<*,*>) {
-//                        if (record["Victim"] != myNum.toLong()) {
-//                            updatedRecords.add(record)
-//                        }
-//                    }
-//                }
-//                myRef.setValue(updatedRecords)
-//            } else {
-//                Toast.makeText(this, "Error updating data", Toast.LENGTH_SHORT).show()
-//            }
-//
-//        }.addOnFailureListener{
-//            Log.e("firebase", "Error getting data", it)
-//        }
+            wantedLoc = Place("wantedLoc", "", name, Geometry(GeometryLocation(lat, lng)))
+            Toast.makeText(this, "Location added! Tap a plane to load location.", Toast.LENGTH_LONG).show()
 
-
-        //read records
-        myRef.get().addOnSuccessListener {
-            var data = it.value
-            val scan = Scanner(openFileInput("my_contact.txt"))
-            while(scan.hasNextLine()) {
-                myNum = scan.nextLine().substring(3).toInt()
-            }
-
-            var isNeedHelp = false
-//            Log.i("firebase", "sad ${data!!::class.simpleName}")
-            Log.i("firebase", "Got value ${it.value}")
-            if (data != null && data is ArrayList<*>) {
-                for (record in data) {
-                    if (record is HashMap<*,*>) {
-                        Log.i("firebase", "record ${record}")
-                        Log.i("firebase", "record type ${record["Rescuer"]}")
-                        if (record["Rescuer"] == myNum.toLong()) {
-
-                            var victimPhoneNum = record["Victim"].toString()
-
-                            //change to be able to handle multiple locs
-                            wantedLoc = Place("wantedLoc", "", victimPhoneNum, Geometry(GeometryLocation(record["Lat"] as Double, record["Lng"] as Double)))
-                            isNeedHelp = true
-                            Toast.makeText(this, "Location added! Tap a plane to load location.", Toast.LENGTH_LONG).show()
-
-                        }
-                    }
-                }
-                if (!isNeedHelp) {
-                    Toast.makeText(this, "All is well! There is no call for help.", Toast.LENGTH_LONG).show()
-                }
-                setUpAr()
-                setUpMaps()
-            } else {
-                Toast.makeText(this, "Error getting data", Toast.LENGTH_SHORT).show()
-            }
-        }.addOnFailureListener{
-            Log.e("firebase", "Error getting data", it)
+            setUpAr()
+            setUpMaps()
         }
     }
 

@@ -7,15 +7,16 @@
     android:gravity="center">
 
     <TextView
+        android:id="@+id/instructionsTV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Are you sure that you are looking for someone's location? This may cause battery drain."
-        android:textSize="20sp" />
+        android:text="Click on a name to track their location. This may cause battery drain."
+        android:textSize="20sp"
+        android:layout_marginBottom="20sp"/>
 
-    <Button
-        android:id="@+id/activateButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Yes" />
+    <ListView
+        android:id="@+id/helpLV"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 </LinearLayout>
