@@ -7,11 +7,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import java.io.PrintStream
 import java.util.*
 import kotlin.collections.HashMap
 
@@ -29,13 +27,14 @@ class RescueFragment : Fragment() {
         v.findViewById<ListView>(R.id.helpLV).setOnItemClickListener{ list, _, index, _ ->
             var selected = detailList.get(index)
             var name = selected["VictimName"].toString()
-            var lat = selected["Lat"] as Double
-            var lng = selected["Lng"] as Double
+            var victimNum = selected["VictimNum"].toString()
+            var RescuerNum = selected["RescuerNum"].toString()
 
             val detailsIt = Intent(activity, RescueActivity::class.java)
             detailsIt.putExtra("name", name)
-            detailsIt.putExtra("lat", lat)
-            detailsIt.putExtra("lng", lng)
+            detailsIt.putExtra("victimNum", victimNum)
+            detailsIt.putExtra("rescuerNum", RescuerNum)
+
             startActivity(detailsIt)
         }
         return v

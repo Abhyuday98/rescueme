@@ -25,6 +25,9 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.ar.core.Anchor
 import com.google.ar.sceneform.AnchorNode
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import com.myapplication.rescueme.ar.PlaceNode
 import com.myapplication.rescueme.ar.PlacesArFragment
 import com.myapplication.rescueme.model.Geometry
@@ -34,8 +37,6 @@ import com.myapplication.rescueme.model.getPositionVector
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import java.io.IOException
-import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 class RescueActivity : AppCompatActivity(), SensorEventListener {
@@ -110,15 +111,33 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
         if (extras != null) {
             var name = ""
             name = extras.getString("name")!!
-            val lat = extras.getDouble("lat")
-            val lng = extras.getDouble("lng")
+            val victimNum = extras.getString("victimNum")!!
+            val rescuerNum = extras.getString("rescuerNum")!!
 
-            wantedLoc = Place("wantedLoc", "", name, Geometry(GeometryLocation(lat, lng)))
-            Toast.makeText(this, "Location added! Tap a plane to load location.", Toast.LENGTH_LONG).show()
+            val database = Firebase.database
+            val myRef = database.getReference("RescueRecords").child(victimNum).child(rescuerNum)
+            myRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    val new = dataSnapshot.value
+                    if (new is HashMap<*,*>) {
+                        val lat = new["Lat"] as Double
+                        val lng = new["Lng"] as Double
+                        updateWantedLoc(name, lat, lng)
+                    }
+                }
+                override fun onCancelled(databaseError: DatabaseError) {
+                    Log.i("record", "Error updating location!")
+                }
+            })
 
-            setUpAr()
-            setUpMaps()
         }
+    }
+
+    private fun updateWantedLoc(name: String, lat: Double, lng: Double){
+        wantedLoc = Place("wantedLoc", "", name, Geometry(GeometryLocation(lat, lng)))
+        Toast.makeText(this, "Location added! Tap a plane to load location.", Toast.LENGTH_LONG).show()
+        setUpAr()
+        setUpMaps()
     }
 
     private fun setUpAr() {
