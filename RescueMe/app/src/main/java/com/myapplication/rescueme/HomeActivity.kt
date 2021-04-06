@@ -66,9 +66,10 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 supportFragmentManager.beginTransaction().replace(R.id.fragment_container, PasscodeFragment()).commit()
             }
             R.id.rescue_tab -> {
-//                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, RescueFragment()).commit()
-                val it = Intent(this, RescueActivity::class.java)
-                startActivity(it)
+                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, RescueFragment()).commit()
+            }
+            R.id.mycontact_setting -> {
+                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, MyContactFragment()).commit()
             }
         }
 

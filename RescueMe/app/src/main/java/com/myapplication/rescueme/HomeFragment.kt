@@ -3,46 +3,69 @@ package com.myapplication.rescueme
 import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Context.LOCATION_SERVICE
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
+import android.location.LocationManager
 import android.media.CamcorderProfile
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.*
+import android.provider.Settings
 import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.api.GoogleApiClient
+import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks
+import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener
+import com.google.android.gms.location.*
+import com.google.firebase.database.ServerValue
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FirebaseStorage
 import java.io.File
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
-
-class HomeFragment : Fragment(), View.OnClickListener {
-    private lateinit var v : View
+class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnConnectionFailedListener {
+    private lateinit var v: View
 
     // video variables
     private var duration = 10000 // duration of video in milliseconds
     private var VIDEO_PATH = ""
-    private lateinit var videoView : VideoView
+    private lateinit var videoView: VideoView
     private val MEDIA_TYPE_IMAGE = 1
     private val MEDIA_TYPE_VIDEO = 2
-    private lateinit var recorder : MediaRecorder
+    private lateinit var recorder: MediaRecorder
     private var recordingStarted = false
 
     // countdown timer variables
-    private lateinit var mCountDownTimer : CountDownTimer
+    private lateinit var mCountDownTimer: CountDownTimer
     var mSimpleDateFormat: SimpleDateFormat = SimpleDateFormat("HH:mm:ss")
     private lateinit var timerDisplay: TextView
     private var isTimerRunning = false
+
+    // location variables
+    private lateinit var mLocationRequest: LocationRequest
+    private  var mGoogleApiClient: GoogleApiClient? = null
+    private lateinit var mFusedLocationClient: FusedLocationProviderClient
+    private var latitude = 0.toDouble()
+    private var longitude = 0.toDouble()
+
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -54,6 +77,11 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 }
             }
         })
+
+        requestRequiredPermissions()
+        checkGPS()
+
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(activity!!)
 
         v = inflater.inflate(R.layout.fragment_home, container, false)
 
@@ -74,38 +102,265 @@ class HomeFragment : Fragment(), View.OnClickListener {
         return v
     }
 
-    private fun hasCameraAudioPermissions() : Boolean {
+    private fun hasRequiredPermissions(): Boolean {
         return ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(
+            activity!!,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(
+            activity!!,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED
 
     }
 
-    private fun requestCameraAudioPermissions() {
+    private fun requestRequiredPermissions() {
         ActivityCompat.requestPermissions(
-                activity!!, arrayOf(
+            activity!!, arrayOf(
                 Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.CAMERA
-        ), 222
+                Manifest.permission.CAMERA,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.INTERNET
+            ), 222
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 222 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            sendHelp()
+    private fun checkGPS() {
+        val manager = activity!!.getSystemService(LOCATION_SERVICE) as LocationManager?
+        if (!manager!!.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            buildAlertMessageNoGps()
         }
     }
 
+    private fun buildAlertMessageNoGps() {
+        val builder = AlertDialog.Builder(activity!!)
+        builder.setMessage("Your location is off. Please enable it for the app to work properly.")
+            .setCancelable(false)
+            .setPositiveButton(
+                "Ok"
+            ) { dialog, id -> startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }
+            .setNegativeButton(
+                "Cancel"
+            ) { dialog, id -> dialog.cancel() }
+        val alert = builder.create()
+        alert.show()
+    }
+
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun sendHelp() {
-        if (hasCameraAudioPermissions()) {
-            // create & call a function that gets the user's location
-            startCameraSession()
-//            Toast.makeText(activity!!, "Recording video...", Toast.LENGTH_SHORT).show()
-        } else {
-            requestCameraAudioPermissions()
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 222 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startHelp()
         }
+    }
+
+    // Starts getting location, recording video
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    private fun startHelp() {
+        if (hasRequiredPermissions()) {
+            // gets the user's location
+            if (mGoogleApiClient == null) {
+                buildGoogleApiClient()
+            }
+            startCameraSession()
+        } else {
+            requestRequiredPermissions()
+        }
+    }
+
+    private fun sendHelp() {
+        updateRescueDetails()
+        uploadVideo()
+
+//        val intent = Intent(activity!!, MyService::class.java)
+//        activity!!.startService(intent)
+
+        Toast.makeText(activity!!, "Rescue details successfully sent!", Toast.LENGTH_SHORT).show()
+    }
+
+    // to be placed within background
+    private fun updateRescueDetails() {
+        val victimDetails = getVictimDetails()
+        val rescuerDetails = getRescuerDetails()
+
+        val victimName = victimDetails[0]
+        val victimNum = victimDetails[1]
+
+        val database = Firebase.database
+        val myRef = database.getReference("RescueRecords")
+        myRef.child(victimNum).removeValue()
+
+        // loop through rescuer hashmap
+        for ((id, details) in rescuerDetails) {
+            val rescuerName = details[0]
+            val rescuerNum = details[1]
+
+            Log.i("rescuer details", "$rescuerName: $rescuerNum")
+
+            writeToDB(latitude, longitude, victimName, victimNum, rescuerName, rescuerNum)
+        }
+    }
+
+    // get victim name and number in the form of arraylist: [name, number]
+    private fun getVictimDetails() : ArrayList<String> {
+        if (!fileExist("my_contact.txt")) {
+            return ArrayList()
+        }
+
+        var name = ""
+        var contactNumber = ""
+
+        val scan = Scanner(activity!!.openFileInput("my_contact.txt"))
+        while (scan.hasNextLine()) {
+            val line = scan.nextLine()
+            val pieces = line.split("\t")
+
+            name = pieces[0]
+            contactNumber = pieces[1]
+        }
+
+        val result = arrayListOf(name, contactNumber)
+        return result
+    }
+
+    // get rescuer details in the form of hashmap: id -> [name, number]
+    private fun getRescuerDetails() : HashMap<String, ArrayList<String>> {
+        if (!fileExist("contacts.txt")) {
+            return HashMap()
+        }
+
+        val result = HashMap<String, ArrayList<String>>()
+
+        val scan = Scanner(activity!!.openFileInput("contacts.txt"))
+        while (scan.hasNextLine()) {
+            val line = scan.nextLine()
+            val pieces = line.split("\t")
+
+            val id = pieces[0]
+            val name = pieces[1]
+            val contactNumber = pieces[2]
+
+            result[id] = arrayListOf(name, contactNumber)
+        }
+
+        return result
+    }
+
+    // Sends victim name, victim contact, rescuer name, rescuer contact, lat, lng to Firebase
+    private fun writeToDB(
+        lat: Double,
+        lng: Double,
+        victimName: String,
+        victimNum: String,
+        rescuerName: String,
+        rescuerNum: String
+    ) {
+        val database = Firebase.database
+        val myRef = database.getReference("RescueRecords")
+        val timeStamp = ServerValue.TIMESTAMP
+
+        var newRecord: HashMap<String, Any> = hashMapOf(
+            "Created" to timeStamp,
+            "Lat" to lat,
+            "Lng" to lng,
+            "RescuerName" to rescuerName,
+            "RescuerNum" to rescuerNum,
+            "VictimName" to victimName,
+            "VictimNum" to victimNum
+        )
+
+        val victimRef = myRef.child(victimNum)
+        val rescuerRef = victimRef.child(rescuerNum)
+        rescuerRef.setValue(newRecord)
+    }
+
+    private fun uploadVideo() {
+        // Create a storage reference from our app
+        val storageRef = FirebaseStorage.getInstance().reference
+
+        // Create a reference to victim's number
+        val victimNum = getVictimDetails()[1]
+        val victimRef = storageRef.child(victimNum)
+
+        var file = Uri.fromFile(File(VIDEO_PATH))
+        val uploadTask = victimRef.putFile(file)
+
+        // Register observers to listen for when the download is done or if it fails
+        uploadTask.addOnFailureListener {
+            // Handle unsuccessful uploads
+            Log.i("Upload msg", "Video not sent. ${it.message}")
+        }.addOnSuccessListener { taskSnapshot ->
+            // taskSnapshot.metadata contains file metadata such as size, content-type, etc.
+            // ...
+            Log.i("Upload msg", "Video sent successfully!")
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        //stop location updates when Activity is no longer active
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback)
+    }
+
+    @Synchronized
+    private fun buildGoogleApiClient() {
+        mGoogleApiClient = GoogleApiClient.Builder(activity!!)
+            .addConnectionCallbacks(this)
+            .addOnConnectionFailedListener(this)
+            .addApi(LocationServices.API)
+            .build()
+        mGoogleApiClient!!.connect()
+
+    }
+
+    override fun onConnected(bundle: Bundle?) {
+        mLocationRequest = LocationRequest()
+        mLocationRequest.setInterval(3000) // three second interval
+        mLocationRequest.setFastestInterval(3000)
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+        if (ContextCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+            mFusedLocationClient.requestLocationUpdates(
+                mLocationRequest,
+                mLocationCallback,
+                Looper.myLooper()
+            )
+//            Toast.makeText(activity, "CONNECTED!", Toast.LENGTH_SHORT).show() // for testing
+        }
+    }
+
+    var mLocationCallback: LocationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            Log.i("MapsActivity", "LocationCallBack()")
+            for (location in locationResult.getLocations()) {
+                latitude = location.latitude
+                longitude = location.longitude
+
+                val msg = "Updated Location: ${location.latitude}, ${location.longitude}"
+                Log.i(
+                    "MapsActivity",
+                    "<Latitude, Longitude> " + "<" + location.latitude + "," + location.longitude + ">"
+                )
+                updateRescueDetails()
+            }
+        }
+    }
+
+    override fun onConnectionSuspended(i: Int) {
+
+    }
+
+    override fun onConnectionFailed(connectionResult: ConnectionResult) {
+
     }
 
     /** Create a file Uri for saving an image or video */
@@ -116,8 +371,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
     /** Create a File for saving an image or video */
     private fun getOutputMediaFile(type: Int): File? {
         val mediaStorageDir = File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                "RescueMe"
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+            "RescueMe"
         )
 
         // Create the storage directory if it does not exist
@@ -146,8 +401,9 @@ class HomeFragment : Fragment(), View.OnClickListener {
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun startCameraSession() {
         val surfaceView = v.findViewById<SurfaceView>(R.id.surfaceView)
+        surfaceView.visibility = View.VISIBLE
 
-        val myCameraManager : CameraManager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val myCameraManager: CameraManager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         if (myCameraManager.cameraIdList.isEmpty()) {
             Toast.makeText(activity!!, "No cameras", Toast.LENGTH_SHORT).show()
             return
@@ -163,39 +419,55 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 override fun onOpened(cameraDevice: CameraDevice) {
                     // use the camera
                     startVideoRecording()
-                    val cameraCharacteristics = myCameraManager.getCameraCharacteristics(cameraDevice.id)
+                    val cameraCharacteristics = myCameraManager.getCameraCharacteristics(
+                        cameraDevice.id
+                    )
 
                     cameraCharacteristics[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.let { streamConfigurationMap ->
-                        streamConfigurationMap.getOutputSizes(ImageFormat.YUV_420_888)?.let { yuvSizes ->
-                            val previewSize = yuvSizes.last()
+                        streamConfigurationMap.getOutputSizes(ImageFormat.YUV_420_888)
+                            ?.let { yuvSizes ->
+                                val previewSize = yuvSizes.last()
 
-                            val displayRotation = activity!!.windowManager.defaultDisplay.rotation
-                            val swappedDimensions = areDimensionsSwapped(displayRotation, cameraCharacteristics)
-                            // swap width and height if needed
-                            val rotatedPreviewWidth = if (swappedDimensions) previewSize.height else previewSize.width
-                            val rotatedPreviewHeight = if (swappedDimensions) previewSize.width else previewSize.height
+                                val displayRotation =
+                                    activity!!.windowManager.defaultDisplay.rotation
+                                val swappedDimensions = areDimensionsSwapped(
+                                    displayRotation,
+                                    cameraCharacteristics
+                                )
+                                // swap width and height if needed
+                                val rotatedPreviewWidth =
+                                    if (swappedDimensions) previewSize.height else previewSize.width
+                                val rotatedPreviewHeight =
+                                    if (swappedDimensions) previewSize.width else previewSize.height
 
-                            surfaceView.holder.setFixedSize(rotatedPreviewWidth, rotatedPreviewHeight)
+                                surfaceView.holder.setFixedSize(
+                                    rotatedPreviewWidth,
+                                    rotatedPreviewHeight
+                                )
 
-                            val previewSurface = surfaceView.holder.surface
+                                val previewSurface = surfaceView.holder.surface
 
-                            val captureCallback = object : CameraCaptureSession.StateCallback() {
-                                override fun onConfigureFailed(session: CameraCaptureSession) {}
+                                val captureCallback =
+                                    object : CameraCaptureSession.StateCallback() {
+                                        override fun onConfigureFailed(session: CameraCaptureSession) {}
 
-                                override fun onConfigured(session: CameraCaptureSession) {
-                                    // session configured
-                                    val previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                                            .apply {
-                                                addTarget(previewSurface)
-                                            }
-                                    session.setRepeatingRequest(
-                                            previewRequestBuilder.build(),
-                                            object : CameraCaptureSession.CaptureCallback() {},
-                                            Handler { true }
-                                    )
-                                }
+                                        override fun onConfigured(session: CameraCaptureSession) {
+                                            // session configured
+                                            val previewRequestBuilder =
+                                                cameraDevice.createCaptureRequest(
+                                                    CameraDevice.TEMPLATE_PREVIEW
+                                                )
+                                                    .apply {
+                                                        addTarget(previewSurface)
+                                                    }
+                                            session.setRepeatingRequest(
+                                                previewRequestBuilder.build(),
+                                                object : CameraCaptureSession.CaptureCallback() {},
+                                                Handler { true }
+                                            )
+                                        }
+                                    }
                             }
-                        }
                     }
                 }
             }, Handler { true })
@@ -205,16 +477,25 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun areDimensionsSwapped(displayRotation: Int, cameraCharacteristics: CameraCharacteristics): Boolean {
+    private fun areDimensionsSwapped(
+        displayRotation: Int,
+        cameraCharacteristics: CameraCharacteristics
+    ): Boolean {
         var swappedDimensions = false
         when (displayRotation) {
             Surface.ROTATION_0, Surface.ROTATION_180 -> {
-                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 90 || cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 270) {
+                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 90 || cameraCharacteristics.get(
+                        CameraCharacteristics.SENSOR_ORIENTATION
+                    ) == 270
+                ) {
                     swappedDimensions = true
                 }
             }
             Surface.ROTATION_90, Surface.ROTATION_270 -> {
-                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 0 || cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 180) {
+                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 0 || cameraCharacteristics.get(
+                        CameraCharacteristics.SENSOR_ORIENTATION
+                    ) == 180
+                ) {
                     swappedDimensions = true
                 }
             }
@@ -279,14 +560,17 @@ class HomeFragment : Fragment(), View.OnClickListener {
         videoView.visibility = View.VISIBLE
         Toast.makeText(activity!!, "Video has stopped recording.", Toast.LENGTH_SHORT).show()
         recordingStarted = false
+
+        val surfaceView = v.findViewById<SurfaceView>(R.id.surfaceView)
+        surfaceView.visibility = View.GONE
     }
 
     // for testing.
     private fun clickVideo() {
         Toast.makeText(
-                activity!!,
-                "Video has been clicked. Video path is $VIDEO_PATH",
-                Toast.LENGTH_LONG
+            activity!!,
+            "Video has been clicked. Video path is $VIDEO_PATH",
+            Toast.LENGTH_LONG
         ).show()
         val videoView = activity!!.findViewById<VideoView>(R.id.videoView)
         videoView.setVideoPath(VIDEO_PATH)
@@ -296,7 +580,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     // temp trigger via button click. Once we have audio detected, then can shift this function.
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun startTimer() {
-        startCameraSession()
+        startHelp()
         Toast.makeText(activity!!, "Recording video...", Toast.LENGTH_SHORT).show()
         mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
@@ -311,9 +595,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
             timerDisplay.visibility = View.VISIBLE
 
             mCountDownTimer.start();
-            // show enter passcode field and enter button
-
-            mCountDownTimer.onFinish()
         } else {
             Log.i("View v", "v is null.")
         }
@@ -349,9 +630,24 @@ class HomeFragment : Fragment(), View.OnClickListener {
                     stopVideoRecording()
                 }
                 stopTimer()
-                Toast.makeText(activity!!, "Correct passcode entered. Timer has stopped.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    activity!!,
+                    "Correct passcode entered. Timer has stopped.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                // Delete video if not used.
+                val file = File(VIDEO_PATH)
+                val deleted = file.delete()
+                if (deleted) {
+                    Log.i("Delete", "$VIDEO_PATH is successfully deleted")
+                }
             } else {
-                Toast.makeText(activity!!, "Incorrect passcode entered. Please try again.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    activity!!,
+                    "Incorrect passcode entered. Please try again.",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             enterPasscodeEditText.text = null
         } else {
@@ -369,7 +665,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // compares the entered hashed passcode wih the one saved in file
-    private fun isCorrectPasscode(passcodeString: String) : Boolean {
+    private fun isCorrectPasscode(passcodeString: String): Boolean {
         var originalPasscode = ""
         val hashedOldPasscode = passcodeString.toMD5()
 
@@ -387,7 +683,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // Get saved time. If for some reason no time is saved, default is 3 minutes.
-    private fun getTime() : Long {
+    private fun getTime(): Long {
         var mMilliseconds = 0.toLong()
 
         if (fileExist("time.txt")) {
@@ -405,14 +701,14 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // returns CountDownTimer object with the milliseconds read from time.txt
-    private fun createCountDownTimer() : CountDownTimer {
+    private fun createCountDownTimer(): CountDownTimer {
         val savedTime = getTime()
-        var mCountDownTimer: CountDownTimer = object : CountDownTimer(savedTime, 1000) {
+        val mCountDownTimer: CountDownTimer = object : CountDownTimer(savedTime, 1000) {
             @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
             override fun onFinish() {
                 isTimerRunning = false
                 timerDisplay.setText(mSimpleDateFormat.format(0))
-//                sendHelp() // call sendHelp() if countdown timer is finished.
+                sendHelp() // call sendHelp() if countdown timer is finished.
             }
 
             override fun onTick(millisUntilFinished: Long) {
@@ -432,8 +728,9 @@ class HomeFragment : Fragment(), View.OnClickListener {
         builder.setMessage("By exiting while the timer is under countdown, we will send your rescue details immediately just to be safe.")
 
         builder.setPositiveButton("Yes") { dialog, which ->
-            // to add send location & video
-            Toast.makeText(activity!!, "Rescue details have been sent to your contacts.", Toast.LENGTH_SHORT).show()
+            sendHelp()
+            // To do: allow user to close activity
+            Toast.makeText(activity!!,"Rescue details have been sent to your contacts.", Toast.LENGTH_SHORT).show()
         }
 
         builder.setNegativeButton("No") { dialog, which ->
@@ -446,7 +743,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun onClick(v: View?) {
         when (v!!.id) {
-            R.id.helpBtn -> sendHelp()
+            R.id.helpBtn -> startHelp()
+//            R.id.helpBtn -> sendHelp()
             R.id.testBtn -> clickVideo()
             R.id.startTimer -> startTimer()
             R.id.enterButton -> enterPasscode()

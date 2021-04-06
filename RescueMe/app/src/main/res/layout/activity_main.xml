@@ -43,7 +43,7 @@
         android:text="Next"
         android:backgroundTint="#3cb043"
         android:textAllCaps="false"
-        android:onClick="goToPasscodeActivity"
+        android:onClick="goToUserContactActivity"
         android:visibility="invisible"/>
 
 

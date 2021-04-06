@@ -10,14 +10,19 @@
             android:title="Home" />
 
         <item
+            android:id="@+id/rescue_tab"
+            android:icon="@drawable/ic_help"
+            android:title="Rescue Who" />
+
+        <item
             android:id="@+id/contacts_setting"
             android:icon="@drawable/ic_contacts"
             android:title="Contacts" />
 
         <item
-            android:id="@+id/timer_setting"
-            android:icon="@drawable/ic_timer"
-            android:title="Timer" />
+            android:id="@+id/mycontact_setting"
+            android:icon="@drawable/ic_mycontact"
+            android:title="My Contact" />
 
         <item
             android:id="@+id/passcode_setting"
@@ -25,9 +30,9 @@
             android:title="Change Passcode" />
 
         <item
-            android:id="@+id/rescue_tab"
-            android:icon="@drawable/ic_help"
-            android:title="Rescue Who" />
+            android:id="@+id/timer_setting"
+            android:icon="@drawable/ic_timer"
+            android:title="Timer" />
 
     </group>
 

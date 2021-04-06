@@ -129,12 +129,13 @@ class MainActivity : AppCompatActivity() {
                         // get phone number
                         val contactNumber = cursor2.getString(cursor2.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
                         details.add(contactNumber)
-                        Toast.makeText(this, "Name: $contactName, PhoneNumber: $contactNumber", Toast.LENGTH_LONG).show()
                     }
                     cursor2.close()
+                    cursor1.close()
+                    writeFile(details)
+                } else {
+                    Toast.makeText(this, "This contact does not have a number. Please choose another contact!", Toast.LENGTH_SHORT).show()
                 }
-                cursor1.close()
-                writeFile(details)
             }
         }
     }
@@ -202,8 +203,8 @@ class MainActivity : AppCompatActivity() {
         showButton()
     }
 
-    fun goToPasscodeActivity(view: View) {
-        val it = Intent(this, FirstPasscodeActivity::class.java)
+    fun goToUserContactActivity(view: View) {
+        val it = Intent(this, UserContactActivity::class.java)
         startActivity(it)
     }
 
