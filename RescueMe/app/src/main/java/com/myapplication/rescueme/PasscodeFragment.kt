@@ -88,6 +88,11 @@ class PasscodeFragment : Fragment(), View.OnClickListener {
             } else {
                 Toast.makeText(activity!!, errorMsg.dropLast(2), Toast.LENGTH_LONG).show()
             }
+
+            oldPasscode.text.clear()
+            newPasscode.text.clear()
+            confirmNewPasscode.text.clear()
+
         }
     }
 

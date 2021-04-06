@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "327131428587",
+    "firebase_url": "https://mobile-16f97-default-rtdb.firebaseio.com",
+    "project_id": "mobile-16f97",
+    "storage_bucket": "mobile-16f97.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:327131428587:android:220bbf23eec83d361630ae",
+        "android_client_info": {
+          "package_name": "com.myapplication.rescueme"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "327131428587-kktcm0bcc6g626mb6lal157dcnrj37gt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvJw5GJaKvsuLjlXSlTlabN9tc8gCDPec"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "327131428587-kktcm0bcc6g626mb6lal157dcnrj37gt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
