@@ -67,7 +67,7 @@ class MyContactFragment : Fragment(), View.OnClickListener {
                 val name = nameEditText.text.toString()
 
                 val contactEditText = activity!!.findViewById<EditText>(R.id.contactEditText)
-                val contactNumber = contactEditText.text.toString()
+                val contactNumber = formatContactNumber(contactEditText.text.toString())
 
                 if (name.isNotEmpty() && contactNumber.length == 11) {
                     saveContactNumber(name, contactNumber)
@@ -86,6 +86,20 @@ class MyContactFragment : Fragment(), View.OnClickListener {
     private fun fileExist(fname: String?): Boolean {
         val file = activity!!.baseContext.getFileStreamPath(fname)
         return file.exists()
+    }
+
+    // join any spaces, add +65 in front if no prefix starting with +.
+    private fun formatContactNumber(contactNumber : String) : String {
+        var result = ""
+
+        if (contactNumber.substring(0, 1) != "+") {
+            result = "+65$contactNumber"
+        } else {
+            result = contactNumber
+        }
+
+        result = result.split(" ").joinToString("")
+        return result
     }
 
 }

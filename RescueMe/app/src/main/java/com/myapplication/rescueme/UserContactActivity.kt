@@ -16,7 +16,7 @@ class UserContactActivity : AppCompatActivity() {
 
     fun goToPasscodeActivity(view: View) {
         val contactNumberEt = findViewById<EditText>(R.id.contactNumberEt)
-        val contactNumber = contactNumberEt.text.toString()
+        val contactNumber = formatContactNumber(contactNumberEt.text.toString())
 
         val nameEt = findViewById<EditText>(R.id.nameEt)
         val name = nameEt.text.toString()
@@ -35,5 +35,19 @@ class UserContactActivity : AppCompatActivity() {
         val output = PrintStream(openFileOutput("my_contact.txt", MODE_PRIVATE))
         output.println(name + "\t" + contactNumber)
         output.close()
+    }
+
+    // join any spaces, add +65 in front if no prefix starting with +.
+    private fun formatContactNumber(contactNumber : String) : String {
+        var result = ""
+
+        if (contactNumber.substring(0, 1) != "+") {
+            result = "+65$contactNumber"
+        } else {
+            result = contactNumber
+        }
+
+        result = result.split(" ").joinToString("")
+        return result
     }
 }

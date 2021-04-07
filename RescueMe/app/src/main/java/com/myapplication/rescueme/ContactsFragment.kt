@@ -204,7 +204,7 @@ class ContactsFragment : Fragment(), View.OnClickListener {
             val pieces = line.split("\t")
             val contactId = pieces[0]
             val contactName = pieces[1]
-            val contactNumber = pieces[2]
+            val contactNumber = formatContactNumber(pieces[2])
 
             // create list of contact objects
             val contact = Contact(contactId, contactName, contactNumber)
@@ -222,7 +222,20 @@ class ContactsFragment : Fragment(), View.OnClickListener {
             val contactsListView = v.findViewById<ListView>(R.id.contactsListView)
             contactsListView.adapter = myAdapter
         }
+    }
 
+    // join any spaces, add +65 in front if no prefix starting with +.
+    private fun formatContactNumber(contactNumber : String) : String {
+        var result = ""
+
+        if (contactNumber.substring(0, 1) != "+") {
+            result = "+65$contactNumber"
+        } else {
+            result = contactNumber
+        }
+
+        result = result.split(" ").joinToString("")
+        return result
     }
 
     override fun onClick(v: View?) {
