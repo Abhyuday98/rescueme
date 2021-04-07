@@ -33,7 +33,7 @@
         android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:inputType="text"
-        android:hint="E.g. +6512345678"
+        android:hint="E.g. 12345678"
         android:layout_marginTop="20dp"/>
 
     <Button
