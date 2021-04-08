@@ -17,6 +17,8 @@ class TimerFragment : Fragment(), View.OnClickListener {
     private lateinit var v : View
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        activity!!.title = "Timer"
+
         v = inflater.inflate(R.layout.fragment_timer, container, false)
 
         val saveTimeButton = v.findViewById<Button>(R.id.saveTimeButton)

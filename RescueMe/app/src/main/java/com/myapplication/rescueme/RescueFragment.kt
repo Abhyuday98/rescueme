@@ -21,6 +21,8 @@ class RescueFragment : Fragment() {
     private var detailList = arrayListOf<HashMap<*,*>>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        activity!!.title = "Rescue Who"
+
         v = inflater.inflate(R.layout.fragment_rescue, container, false)
 
         readFromDB()

@@ -32,6 +32,8 @@ class ContactsFragment : Fragment(), View.OnClickListener {
     private lateinit var v: View
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        activity!!.title = "Contacts"
+
         v = inflater.inflate(R.layout.fragment_contacts, container, false)
         setupContactsList()
 

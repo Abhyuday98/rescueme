@@ -20,6 +20,8 @@ class MyContactFragment : Fragment(), View.OnClickListener {
     private lateinit var v: View
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        activity!!.title = "My Contact"
+
         v = inflater.inflate(R.layout.fragment_mycontact, container, false)
 
         val saveContactBtn = v.findViewById<Button>(R.id.saveContactBtn)

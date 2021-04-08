@@ -69,6 +69,8 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        activity!!.title = "Rescue Me"
+
         // onbackpressed logic
         activity?.onBackPressedDispatcher?.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -702,7 +704,8 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
 
     // returns CountDownTimer object with the milliseconds read from time.txt
     private fun createCountDownTimer(): CountDownTimer {
-        val savedTime = getTime()
+//        val savedTime = getTime()
+        val savedTime = 10000.toLong()
         val mCountDownTimer: CountDownTimer = object : CountDownTimer(savedTime, 1000) {
             @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
             override fun onFinish() {

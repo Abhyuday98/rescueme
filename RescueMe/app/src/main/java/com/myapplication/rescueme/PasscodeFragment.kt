@@ -16,6 +16,8 @@ import java.util.*
 class PasscodeFragment : Fragment(), View.OnClickListener {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        activity!!.title = "Change Passcode"
+
         val v = inflater.inflate(R.layout.fragment_passcode, container, false)
 
         val saveBtn = v.findViewById<Button>(R.id.saveBtn)
