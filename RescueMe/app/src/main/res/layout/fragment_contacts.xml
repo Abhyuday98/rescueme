@@ -10,8 +10,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Edit Contacts"
-        android:textSize="30sp"
-        android:layout_marginTop="20dp"/>
+        android:textSize="20sp"
+        android:layout_marginTop="20dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Click on a contact to delete it."
+        android:layout_marginTop="10dp"/>
 
     <Button
         android:id="@+id/addContactButton"
@@ -19,7 +25,7 @@
         android:layout_height="wrap_content"
         android:text="Add Contact"
         android:textAllCaps="false"
-        android:layout_marginTop="20dp"/>
+        android:layout_marginTop="10dp"/>
 
     <ListView
         android:id="@+id/contactsListView"

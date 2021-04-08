@@ -7,13 +7,21 @@
     android:gravity="center">
 
     <TextView
+        android:id="@+id/infoTv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="If you need immediate help, click the Help button."
+        android:layout_margin="20dp" />
+
+    <TextView
         android:id="@+id/timerDisplay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Timer"
         android:layout_marginBottom="20dp"
-        android:textSize="80sp"
-        android:visibility="gone"/>
+        android:text=""
+        android:textColor="@color/design_default_color_error"
+        android:textSize="70sp"
+        android:visibility="gone" />
 
     <EditText
         android:id="@+id/enterPasscodeEditText"
@@ -37,31 +45,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Help!"
-        android:textAllCaps="false"
-        android:textSize="20sp" />
-
-    <VideoView
-        android:id="@+id/videoView"
-        android:layout_width="350dp"
-        android:layout_height="200dp"
-        android:visibility="gone" />
+        android:textAllCaps="false" />
 
     <SurfaceView
         android:id="@+id/surfaceView"
         android:layout_width="350dp"
         android:layout_height="200dp"
         android:visibility="gone"/>
-
-    <Button
-        android:id="@+id/startTimer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Start Timer"/>
-
-    <Button
-        android:id="@+id/testBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Test"/>
 
 </LinearLayout>

@@ -12,6 +12,10 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
+        <item name="android:fontFamily">@font/roboto</item>
+        <item name="android:textViewStyle">@font/roboto</item>
+        <item name="android:buttonStyle">@font/roboto</item>
+        <item name="android:editTextStyle">@font/roboto</item>
     </style>
 
     <style name="Theme.RescueMe.NoActionBar">

@@ -10,8 +10,7 @@
         android:id="@+id/instructionsTV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Click on a name to view rescue details. Tracking location may cause battery drain."
-        android:textSize="20sp"
+        android:text="Click on a name to view rescue details.\nTracking location may cause battery drain."
         android:layout_margin="20sp"/>
 
     <ListView

@@ -1,31 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".RescueDetailsActivity"
     android:orientation="vertical"
-    android:gravity="center|top">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Rescue Details"
-        android:layout_margin="20dp"
-        android:textSize="30sp"/>
+    android:gravity="left|top">
 
     <TextView
         android:id="@+id/victimNameTv"
-        android:layout_width="200dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Victim Name: " />
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="70dp"
+        android:text="Victim Name: "
+        android:textSize="18sp" />
 
     <TextView
         android:id="@+id/victimNumberTv"
-        android:layout_width="200dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Victim Number: " />
+        android:layout_marginLeft="70dp"
+        android:text="Victim Number: "
+        android:textSize="18sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
