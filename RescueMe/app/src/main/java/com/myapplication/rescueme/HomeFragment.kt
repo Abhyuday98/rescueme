@@ -19,30 +19,24 @@ import android.os.*
 import android.provider.Settings
 import android.util.Log
 import android.view.*
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.api.GoogleApiClient
-import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks
-import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener
-import com.google.android.gms.location.*
-import com.google.firebase.database.ServerValue
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import java.io.File
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
-class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnConnectionFailedListener {
+class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var v: View
+    private var isRescued = true
 
     // video variables
     private var duration = 10000 // duration of video in milliseconds
@@ -58,15 +52,8 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
     private lateinit var timerDisplay: TextView
     private var isTimerRunning = false
 
-    // location variables
-    private lateinit var mLocationRequest: LocationRequest
-    private  var mGoogleApiClient: GoogleApiClient? = null
-    private lateinit var mFusedLocationClient: FusedLocationProviderClient
-    private var latitude = 0.toDouble()
-    private var longitude = 0.toDouble()
 
-
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         activity!!.title = "Rescue Me"
 
@@ -81,8 +68,6 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
         requestRequiredPermissions()
         checkGPS()
 
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(activity!!)
-
         v = inflater.inflate(R.layout.fragment_home, container, false)
 
         val helpBtn = v.findViewById<Button>(R.id.helpBtn)
@@ -96,21 +81,18 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
         return v
     }
 
+    @RequiresApi(Build.VERSION_CODES.P)
     private fun hasRequiredPermissions(): Boolean {
         return ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(
-            activity!!,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(
-            activity!!,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED
-
+                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.FOREGROUND_SERVICE) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
+    @RequiresApi(Build.VERSION_CODES.P)
     private fun requestRequiredPermissions() {
         ActivityCompat.requestPermissions(
             activity!!, arrayOf(
@@ -118,7 +100,9 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
                 Manifest.permission.CAMERA,
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.INTERNET
+                Manifest.permission.INTERNET,
+                Manifest.permission.FOREGROUND_SERVICE,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
             ), 222
         )
     }
@@ -144,7 +128,7 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
         alert.show()
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -157,13 +141,10 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
     }
 
     // Starts getting location, recording video
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(Build.VERSION_CODES.P)
     private fun startHelp() {
+        Log.i("hasRequiredPermissions", "${hasRequiredPermissions()}")
         if (hasRequiredPermissions()) {
-            // gets the user's location
-            if (mGoogleApiClient == null) {
-                buildGoogleApiClient()
-            }
             startCameraSession()
         } else {
             requestRequiredPermissions()
@@ -171,36 +152,13 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
     }
 
     private fun sendHelp() {
-        updateRescueDetails()
         uploadVideo()
 
-//        val intent = Intent(activity!!, MyService::class.java)
-//        activity!!.startService(intent)
+        isRescued = false
+        // goes to LocationService to update details and location continuously.
+        LocationService.startService(activity!!, "Retrieving location...")
 
         Toast.makeText(activity!!, "Rescue details successfully sent!", Toast.LENGTH_SHORT).show()
-    }
-
-    // to be placed within background
-    private fun updateRescueDetails() {
-        val victimDetails = getVictimDetails()
-        val rescuerDetails = getRescuerDetails()
-
-        val victimName = victimDetails[0]
-        val victimNum = victimDetails[1]
-
-        val database = Firebase.database
-        val myRef = database.getReference("RescueRecords")
-        myRef.child(victimNum).removeValue()
-
-        // loop through rescuer hashmap
-        for ((id, details) in rescuerDetails) {
-            val rescuerName = details[0]
-            val rescuerNum = details[1]
-
-            Log.i("rescuer details", "$rescuerName: $rescuerNum")
-
-            writeToDB(latitude, longitude, victimName, victimNum, rescuerName, rescuerNum)
-        }
     }
 
     // get victim name and number in the form of arraylist: [name, number]
@@ -225,57 +183,6 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
         return result
     }
 
-    // get rescuer details in the form of hashmap: id -> [name, number]
-    private fun getRescuerDetails() : HashMap<String, ArrayList<String>> {
-        if (!fileExist("contacts.txt")) {
-            return HashMap()
-        }
-
-        val result = HashMap<String, ArrayList<String>>()
-
-        val scan = Scanner(activity!!.openFileInput("contacts.txt"))
-        while (scan.hasNextLine()) {
-            val line = scan.nextLine()
-            val pieces = line.split("\t")
-
-            val id = pieces[0]
-            val name = pieces[1]
-            val contactNumber = pieces[2]
-
-            result[id] = arrayListOf(name, contactNumber)
-        }
-
-        return result
-    }
-
-    // Sends victim name, victim contact, rescuer name, rescuer contact, lat, lng to Firebase
-    private fun writeToDB(
-        lat: Double,
-        lng: Double,
-        victimName: String,
-        victimNum: String,
-        rescuerName: String,
-        rescuerNum: String
-    ) {
-        val database = Firebase.database
-        val myRef = database.getReference("RescueRecords")
-        val timeStamp = ServerValue.TIMESTAMP
-
-        var newRecord: HashMap<String, Any> = hashMapOf(
-            "Created" to timeStamp,
-            "Lat" to lat,
-            "Lng" to lng,
-            "RescuerName" to rescuerName,
-            "RescuerNum" to rescuerNum,
-            "VictimName" to victimName,
-            "VictimNum" to victimNum
-        )
-
-        val victimRef = myRef.child(victimNum)
-        val rescuerRef = victimRef.child(rescuerNum)
-        rescuerRef.setValue(newRecord)
-    }
-
     private fun uploadVideo() {
         // Create a storage reference from our app
         val storageRef = FirebaseStorage.getInstance().reference
@@ -296,69 +203,6 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
             // ...
             Log.i("Upload msg", "Video sent successfully!")
         }
-    }
-
-    override fun onPause() {
-        super.onPause()
-
-        //stop location updates when Activity is no longer active
-        mFusedLocationClient.removeLocationUpdates(mLocationCallback)
-    }
-
-    @Synchronized
-    private fun buildGoogleApiClient() {
-        mGoogleApiClient = GoogleApiClient.Builder(activity!!)
-            .addConnectionCallbacks(this)
-            .addOnConnectionFailedListener(this)
-            .addApi(LocationServices.API)
-            .build()
-        mGoogleApiClient!!.connect()
-
-    }
-
-    override fun onConnected(bundle: Bundle?) {
-        mLocationRequest = LocationRequest()
-        mLocationRequest.setInterval(3000) // three second interval
-        mLocationRequest.setFastestInterval(3000)
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-        if (ContextCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_FINE_LOCATION)
-            == PackageManager.PERMISSION_GRANTED) {
-            mFusedLocationClient.requestLocationUpdates(
-                mLocationRequest,
-                mLocationCallback,
-                Looper.myLooper()
-            )
-        }
-    }
-
-    var mLocationCallback: LocationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-            Log.i("MapsActivity", "LocationCallBack()")
-            for (location in locationResult.getLocations()) {
-                latitude = location.latitude
-                longitude = location.longitude
-
-                val msg = "Updated Location: ${location.latitude}, ${location.longitude}"
-                Log.i(
-                    "MapsActivity",
-                    "<Latitude, Longitude> " + "<" + location.latitude + "," + location.longitude + ">"
-                )
-                updateRescueDetails()
-            }
-        }
-    }
-
-    override fun onConnectionSuspended(i: Int) {
-
-    }
-
-    override fun onConnectionFailed(connectionResult: ConnectionResult) {
-
-    }
-
-    /** Create a file Uri for saving an image or video */
-    private fun getOutputMediaFileUri(type: Int): Uri {
-        return Uri.fromFile(getOutputMediaFile(type))
     }
 
     /** Create a File for saving an image or video */
@@ -555,7 +399,7 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
     }
 
     // temp trigger via button click. Once we have audio detected, then can shift this function.
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(Build.VERSION_CODES.P)
     private fun startTimer() {
         startHelp()
         mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -721,7 +565,7 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
             stopTimer()
             sendHelp()
             val infoTv = v.findViewById<TextView>(R.id.infoTv)
-            infoTv.text = "If you need immediate help, click the Help button."
+            infoTv.text = "If you need immediate help, click the \"Help!\" button."
             Toast.makeText(activity!!,"Rescue details have been sent to your contacts.", Toast.LENGTH_SHORT).show()
         }
 
@@ -732,7 +576,7 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
         builder.show()
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onClick(v: View?) {
         when (v!!.id) {
             R.id.helpBtn -> startTimer()
