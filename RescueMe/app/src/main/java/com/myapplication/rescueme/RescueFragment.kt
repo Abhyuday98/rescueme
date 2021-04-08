@@ -60,9 +60,9 @@ class RescueFragment : Fragment() {
                 var userDet = scan.nextLine().split("\t")
                 myName = userDet[0]
                 myNum = userDet[1]
+                Log.i("myNum", myNum)
             }
 
-            myNum = "+65 9850 9431"
             var isNeedHelp = false
             Log.i("firebase", "Got value ${it.value}")
             if (data != null && data is HashMap<*,*>) {
