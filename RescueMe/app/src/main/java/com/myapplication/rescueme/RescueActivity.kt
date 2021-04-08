@@ -109,8 +109,8 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
     private fun setUp() {
         val extras = intent.extras
         if (extras != null) {
-            var name = ""
-            name = extras.getString("name")!!
+            var victimName = ""
+            victimName = extras.getString("victimName")!!
             val victimNum = extras.getString("victimNum")!!
             val rescuerNum = extras.getString("rescuerNum")!!
 
@@ -122,7 +122,7 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
                     if (new is HashMap<*,*>) {
                         val lat = new["Lat"] as Double
                         val lng = new["Lng"] as Double
-                        updateWantedLoc(name, lat, lng)
+                        updateWantedLoc(victimName, lat, lng)
                     }
                 }
                 override fun onCancelled(databaseError: DatabaseError) {

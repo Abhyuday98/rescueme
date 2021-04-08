@@ -30,8 +30,8 @@ class RescueFragment : Fragment() {
             var victimNum = selected["VictimNum"].toString()
             var RescuerNum = selected["RescuerNum"].toString()
 
-            val detailsIt = Intent(activity, RescueActivity::class.java)
-            detailsIt.putExtra("name", name)
+            val detailsIt = Intent(activity, RescueDetailsActivity::class.java)
+            detailsIt.putExtra("victimName", name)
             detailsIt.putExtra("victimNum", victimNum)
             detailsIt.putExtra("rescuerNum", RescuerNum)
 
