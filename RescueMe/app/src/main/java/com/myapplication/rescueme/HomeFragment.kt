@@ -26,8 +26,10 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.android.synthetic.main.activity_home.*
 import java.io.File
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
@@ -429,6 +431,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
     // makes timer pause and disappear.
     private fun stopTimer() {
         isTimerRunning = false
+        val mDrawerLayout = activity!!.drawer_layout
+        mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
 
         mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
@@ -540,11 +544,17 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 isTimerRunning = false
                 timerDisplay.setText(mSimpleDateFormat.format(0))
                 sendHelp() // call sendHelp() if countdown timer is finished.
+
+                val mDrawerLayout = activity!!.drawer_layout
+                mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
             }
 
             override fun onTick(millisUntilFinished: Long) {
                 isTimerRunning = true
                 timerDisplay.setText(mSimpleDateFormat.format(millisUntilFinished))
+
+                val mDrawerLayout = activity!!.drawer_layout
+                mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
             }
         }
 
@@ -553,20 +563,24 @@ class HomeFragment : Fragment(), View.OnClickListener {
         return mCountDownTimer
     }
 
+    private fun sendRescueDetails() {
+        if (recordingStarted) {
+            stopVideoRecording()
+        }
+        stopTimer()
+        sendHelp()
+        val infoTv = v.findViewById<TextView>(R.id.infoTv)
+        infoTv.text = "If you need immediate help, click the \"Help!\" button."
+        Toast.makeText(activity!!,"Rescue details have been sent to your contacts.", Toast.LENGTH_SHORT).show()
+    }
+
     private fun showAlertDialog() {
         val builder = AlertDialog.Builder(activity!!)
         builder.setTitle("Are you sure you want to exit?")
         builder.setMessage("By exiting while the timer is under countdown, we will send your rescue details immediately just to be safe.")
 
         builder.setPositiveButton("Yes") { dialog, which ->
-            if (recordingStarted) {
-                stopVideoRecording()
-            }
-            stopTimer()
-            sendHelp()
-            val infoTv = v.findViewById<TextView>(R.id.infoTv)
-            infoTv.text = "If you need immediate help, click the \"Help!\" button."
-            Toast.makeText(activity!!,"Rescue details have been sent to your contacts.", Toast.LENGTH_SHORT).show()
+            sendRescueDetails()
         }
 
         builder.setNegativeButton("No") { dialog, which ->
@@ -574,6 +588,26 @@ class HomeFragment : Fragment(), View.OnClickListener {
         }
 
         builder.show()
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        if (isTimerRunning) {
+            sendRescueDetails()
+        }
+
+        Log.i("lifecycle", "onPause, $isTimerRunning")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        if (isTimerRunning) {
+            sendRescueDetails()
+        }
+
+        Log.i("lifecycle", "onDestroy, $isTimerRunning")
     }
 
     @RequiresApi(Build.VERSION_CODES.P)
