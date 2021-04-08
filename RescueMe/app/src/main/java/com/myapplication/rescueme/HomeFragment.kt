@@ -715,7 +715,9 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
         builder.setMessage("By exiting while the timer is under countdown, we will send your rescue details immediately just to be safe.")
 
         builder.setPositiveButton("Yes") { dialog, which ->
-            stopVideoRecording()
+            if (recordingStarted) {
+                stopVideoRecording()
+            }
             stopTimer()
             sendHelp()
             val infoTv = v.findViewById<TextView>(R.id.infoTv)
