@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -22,6 +23,11 @@ class RescueFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         activity!!.title = "Rescue Who"
+
+        activity?.onBackPressedDispatcher?.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+            }
+        })
 
         v = inflater.inflate(R.layout.fragment_rescue, container, false)
 

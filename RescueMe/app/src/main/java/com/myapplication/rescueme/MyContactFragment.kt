@@ -8,6 +8,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import kotlinx.android.synthetic.main.fragment_mycontact.*
@@ -21,6 +22,11 @@ class MyContactFragment : Fragment(), View.OnClickListener {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         activity!!.title = "My Contact"
+
+        activity?.onBackPressedDispatcher?.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+            }
+        })
 
         v = inflater.inflate(R.layout.fragment_mycontact, container, false)
 
@@ -52,7 +58,7 @@ class MyContactFragment : Fragment(), View.OnClickListener {
             name = pieces[0]
             contactNumber = pieces[1]
 
-            currentContactTextView.text = "Current contact details:\n$name\n$contactNumber"
+            currentContactTextView.text = "Name: $name\nContact Number: $contactNumber"
         }
     }
 

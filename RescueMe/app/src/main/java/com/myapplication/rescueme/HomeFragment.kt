@@ -47,7 +47,6 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
     // video variables
     private var duration = 10000 // duration of video in milliseconds
     private var VIDEO_PATH = ""
-    private lateinit var videoView: VideoView
     private val MEDIA_TYPE_IMAGE = 1
     private val MEDIA_TYPE_VIDEO = 2
     private lateinit var recorder: MediaRecorder
@@ -71,7 +70,6 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         activity!!.title = "Rescue Me"
 
-        // onbackpressed logic
         activity?.onBackPressedDispatcher?.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (isTimerRunning == true) {
@@ -89,12 +87,6 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
 
         val helpBtn = v.findViewById<Button>(R.id.helpBtn)
         helpBtn.setOnClickListener(this)
-
-        val testBtn = v.findViewById<Button>(R.id.testBtn)
-        testBtn.setOnClickListener(this)
-
-        val startTimerBtn = v.findViewById<Button>(R.id.startTimer)
-        startTimerBtn.setOnClickListener(this)
 
         val enterButton = v.findViewById<Button>(R.id.enterButton)
         enterButton.setOnClickListener(this)
@@ -336,7 +328,6 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
                 mLocationCallback,
                 Looper.myLooper()
             )
-//            Toast.makeText(activity, "CONNECTED!", Toast.LENGTH_SHORT).show() // for testing
         }
     }
 
@@ -407,7 +398,7 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
 
         val myCameraManager: CameraManager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         if (myCameraManager.cameraIdList.isEmpty()) {
-            Toast.makeText(activity!!, "No cameras", Toast.LENGTH_SHORT).show()
+            Log.i("cameraIdList", "cameraIdList is empty.")
             return
         }
 
@@ -540,7 +531,6 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
         } catch (e: Exception) {
             Log.i("recorder start error", e.message)
             recordingStarted = false
-            Toast.makeText(activity!!, "Recording did not start.", Toast.LENGTH_SHORT).show()
         }
 
         // if max duration reached, stop recording.
@@ -558,35 +548,25 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
         recorder.stop()
         recorder.reset()
         recorder.release()
-        videoView = activity!!.findViewById<VideoView>(R.id.videoView)
-        videoView.visibility = View.VISIBLE
-        Toast.makeText(activity!!, "Video has stopped recording.", Toast.LENGTH_SHORT).show()
         recordingStarted = false
 
         val surfaceView = v.findViewById<SurfaceView>(R.id.surfaceView)
         surfaceView.visibility = View.GONE
     }
 
-    // for testing.
-    private fun clickVideo() {
-        Toast.makeText(
-            activity!!,
-            "Video has been clicked. Video path is $VIDEO_PATH",
-            Toast.LENGTH_LONG
-        ).show()
-        val videoView = activity!!.findViewById<VideoView>(R.id.videoView)
-        videoView.setVideoPath(VIDEO_PATH)
-        videoView.start()
-    }
-
     // temp trigger via button click. Once we have audio detected, then can shift this function.
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun startTimer() {
         startHelp()
-        Toast.makeText(activity!!, "Recording video...", Toast.LENGTH_SHORT).show()
         mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         if (v != null) {
+            val infoTv = v.findViewById<TextView>(R.id.infoTv)
+            infoTv.text = "You have asked for help. If this is a false alarm, please enter the correct passcode."
+
+            val helpBtn = v.findViewById<Button>(R.id.helpBtn)
+            helpBtn.visibility = View.GONE
+
             val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
             enterPasscodeEditText.visibility = View.VISIBLE
 
@@ -604,9 +584,17 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
 
     // makes timer pause and disappear.
     private fun stopTimer() {
+        isTimerRunning = false
+
         mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         if (v != null) {
+            val infoTv = v.findViewById<TextView>(R.id.infoTv)
+            infoTv.text = "If you need immediate help, click the Help button."
+
+            val helpBtn = v.findViewById<Button>(R.id.helpBtn)
+            helpBtn.visibility = View.VISIBLE
+
             val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
             enterPasscodeEditText.visibility = View.GONE
 
@@ -632,11 +620,7 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
                     stopVideoRecording()
                 }
                 stopTimer()
-                Toast.makeText(
-                    activity!!,
-                    "Correct passcode entered. Timer has stopped.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(activity!!, "Correct passcode entered. Timer has stopped.", Toast.LENGTH_SHORT).show()
 
                 // Delete video if not used.
                 val file = File(VIDEO_PATH)
@@ -704,8 +688,8 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
 
     // returns CountDownTimer object with the milliseconds read from time.txt
     private fun createCountDownTimer(): CountDownTimer {
-//        val savedTime = getTime()
-        val savedTime = 10000.toLong()
+        val savedTime = getTime()
+//        val savedTime = 10000.toLong()
         val mCountDownTimer: CountDownTimer = object : CountDownTimer(savedTime, 1000) {
             @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
             override fun onFinish() {
@@ -731,8 +715,11 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
         builder.setMessage("By exiting while the timer is under countdown, we will send your rescue details immediately just to be safe.")
 
         builder.setPositiveButton("Yes") { dialog, which ->
+            stopVideoRecording()
+            stopTimer()
             sendHelp()
-            // To do: allow user to close activity
+            val infoTv = v.findViewById<TextView>(R.id.infoTv)
+            infoTv.text = "If you need immediate help, click the Help button."
             Toast.makeText(activity!!,"Rescue details have been sent to your contacts.", Toast.LENGTH_SHORT).show()
         }
 
@@ -746,10 +733,7 @@ class HomeFragment : Fragment(), View.OnClickListener, ConnectionCallbacks, OnCo
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun onClick(v: View?) {
         when (v!!.id) {
-            R.id.helpBtn -> startHelp()
-//            R.id.helpBtn -> sendHelp()
-            R.id.testBtn -> clickVideo()
-            R.id.startTimer -> startTimer()
+            R.id.helpBtn -> startTimer()
             R.id.enterButton -> enterPasscode()
         }
     }

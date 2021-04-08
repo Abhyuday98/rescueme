@@ -8,6 +8,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import java.io.PrintStream
@@ -18,6 +19,11 @@ class TimerFragment : Fragment(), View.OnClickListener {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         activity!!.title = "Timer"
+
+        activity?.onBackPressedDispatcher?.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+            }
+        })
 
         v = inflater.inflate(R.layout.fragment_timer, container, false)
 
@@ -38,7 +44,11 @@ class TimerFragment : Fragment(), View.OnClickListener {
                 val line = scan.nextLine()
                 val milliseconds = line.toInt()
                 val minutes = milliseconds / 60000
-                currentTimerTextView.text = "Current timer is $minutes minutes."
+                if (minutes == 1) {
+                    currentTimerTextView.text = "Current timer is $minutes minute."
+                } else {
+                    currentTimerTextView.text = "Current timer is $minutes minutes."
+                }
             }
         } else {
             currentTimerTextView.text = "Current Timer is 3 minutes."
@@ -54,6 +64,8 @@ class TimerFragment : Fragment(), View.OnClickListener {
         output.close()
 
         displayCurrentTime()
+
+        timeEditText.text.clear()
 
         Toast.makeText(activity!!, "Time has been saved.", Toast.LENGTH_SHORT).show()
     }

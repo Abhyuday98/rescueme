@@ -14,6 +14,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ListView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
@@ -33,6 +34,14 @@ class ContactsFragment : Fragment(), View.OnClickListener {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         activity!!.title = "Contacts"
+
+        activity?.onBackPressedDispatcher?.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (contactsList.size < 3) {
+                    showAlertDialog()
+                }
+            }
+        })
 
         v = inflater.inflate(R.layout.fragment_contacts, container, false)
         setupContactsList()
@@ -238,6 +247,17 @@ class ContactsFragment : Fragment(), View.OnClickListener {
 
         result = result.split(" ").joinToString("")
         return result
+    }
+
+    private fun showAlertDialog() {
+        val builder = AlertDialog.Builder(activity!!)
+        builder.setTitle("Insufficient contacts")
+        builder.setMessage("Please choose at least 3 contacts.")
+
+        builder.setNeutralButton("Ok") { dialog, which ->
+        }
+
+        builder.show()
     }
 
     override fun onClick(v: View?) {
