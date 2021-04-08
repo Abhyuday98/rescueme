@@ -27,6 +27,7 @@ import com.google.ar.core.Anchor
 import com.google.ar.sceneform.AnchorNode
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.myapplication.rescueme.ar.PlaceNode
 import com.myapplication.rescueme.ar.PlacesArFragment
@@ -49,6 +50,8 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
 
     // Location
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var dbRef: DatabaseReference
+    private lateinit var dbEventListener: ValueEventListener
 
     // Sensor
     private lateinit var sensorManager: SensorManager
@@ -106,6 +109,11 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
         sensorManager.unregisterListener(this)
     }
 
+    override fun onStop() {
+        super.onStop()
+        dbRef.removeEventListener(dbEventListener);
+    }
+
     private fun setUp() {
         val extras = intent.extras
         if (extras != null) {
@@ -115,8 +123,8 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
             val rescuerNum = extras.getString("rescuerNum")!!
 
             val database = Firebase.database
-            val myRef = database.getReference("RescueRecords").child(victimNum).child(rescuerNum)
-            myRef.addValueEventListener(object : ValueEventListener {
+            dbRef = database.getReference("RescueRecords").child(victimNum).child(rescuerNum)
+            dbEventListener = object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     val new = dataSnapshot.value
                     if (new is HashMap<*,*>) {
@@ -128,7 +136,9 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
                 override fun onCancelled(databaseError: DatabaseError) {
                     Log.i("record", "Error updating location!")
                 }
-            })
+            }
+
+            dbRef.addValueEventListener(dbEventListener)
 
         }
     }
