@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -27,18 +27,22 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.RescueMe">
+
         <meta-data
             android:name="com.google.ar.core"
             android:value="required" />
-
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
-        <activity android:name=".UserContactActivity"></activity>
-        <activity android:name=".RescueActivity"
+        <activity android:name=".RescueDetailsActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".UserContactActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".RescueActivity"
             android:label="@string/app_name"
-            android:theme="@style/Theme.RescueMe.NoActionBar"/>
+            android:theme="@style/Theme.RescueMe.NoActionBar" />
         <activity
             android:name=".FirstPasscodeActivity"
             android:configChanges="orientation|screenSize"
