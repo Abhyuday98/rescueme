@@ -1,14 +1,11 @@
 package com.myapplication.rescueme
 import android.content.Context
-import android.content.Intent
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.SystemClock
 import android.util.Log
-import androidx.annotation.MainThread
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
+
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import java.io.BufferedReader
@@ -394,8 +391,15 @@ class SoundClassifier2(context: Context) {
                 val probList = predictionProbs.map {
                     if (it > probabilityThreshold) it else 0f
                 }
-                Log.i("sound", labelList.toString())
-                Log.i("sound", probList.toString())
+//                Log.i("sound", labelList.toString())
+//                Log.i("sound", probList.toString())
+//                if (probList[1]>90){
+                val detected = probList[1]>0.9
+                if(detected){
+                    Log.i("sound", "RescueMe | "+ probList[1].toString()+" | "+detected.toString())
+                }
+//                }
+
 //                val intent = Intent(this, MyService::class.java)
 //                startService(intent)
 

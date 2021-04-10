@@ -35,7 +35,7 @@ class MyService : Service() {
                 0, notificationIntent, 0
         )
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Foreground Service Kotlin Example")
+                .setContentTitle("Rescue Me")
                 .setContentText(input)
                 .setSmallIcon(R.drawable.heroine1)
                 .setContentIntent(pendingIntent)
