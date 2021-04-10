@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/instructionsTV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Click on a name to view rescue details.\nTracking location may cause battery drain."
+        android:layout_margin="20sp"/>
+
+    <ListView
+        android:id="@+id/helpLV"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</LinearLayout>

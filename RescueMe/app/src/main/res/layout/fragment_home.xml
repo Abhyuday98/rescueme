@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/infoTv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="If you need immediate help, click the Help button."
+        android:layout_margin="20dp" />
+
+    <TextView
+        android:id="@+id/timerDisplay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:text=""
+        android:textColor="@color/design_default_color_error"
+        android:textSize="70sp"
+        android:visibility="gone" />
+
+    <EditText
+        android:id="@+id/enterPasscodeEditText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="numberPassword"
+        android:hint="Enter your passcode to stop the countdown."
+        android:layout_marginTop="20dp"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/enterButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enter"
+        android:textAllCaps="false"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/helpBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Help!"
+        android:textAllCaps="false" />
+
+    <SurfaceView
+        android:id="@+id/surfaceView"
+        android:layout_width="350dp"
+        android:layout_height="200dp"
+        android:visibility="gone"/>
+
+</LinearLayout>

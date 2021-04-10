@@ -84,3 +84,5 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+RescueMe/.idea/markdown-navigator.xml
+RescueMe/.idea/markdown-navigator-enh.xml

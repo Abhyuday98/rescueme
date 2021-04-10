@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:orientation="vertical"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/tV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Welcome to RescueMe!"
+        android:textSize="30sp"
+        android:layout_marginBottom="20dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Let's get you started by choosing your contacts.\nPlease add a minimum of 3 contacts."
+        android:layout_marginBottom="20dp"/>
+
+    <Button
+        android:id="@+id/addContactBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add Contact"
+        android:textAllCaps="false"
+        android:onClick="goToContacts"/>
+
+    <ListView
+        android:id="@+id/contactsLv"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:focusable="true"/>
+
+    <Button
+        android:id="@+id/nextBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Next"
+        android:backgroundTint="#3cb043"
+        android:textAllCaps="false"
+        android:onClick="goToUserContactActivity"
+        android:visibility="invisible"/>
+
+
+</LinearLayout>

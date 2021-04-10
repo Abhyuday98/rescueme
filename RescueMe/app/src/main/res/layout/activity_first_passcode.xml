@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".FirstPasscodeActivity"
+    android:orientation="vertical"
+    android:gravity="center">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Please create a 4-digit passcode which will be used for verification later."
+        android:textAlignment="textStart"
+        android:layout_margin="20dp"/>
+
+    <EditText
+        android:id="@+id/passcodeEditText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="Enter a 4-digit passcode."
+        android:inputType="numberPassword"/>
+
+    <Button
+        android:id="@+id/doneBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Done"
+        android:backgroundTint="#3cb043"
+        android:textAllCaps="false"
+        android:onClick="goToHomeActivity"
+        android:visibility="visible"/>
+
+</LinearLayout>
