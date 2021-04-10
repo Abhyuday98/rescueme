@@ -1,15 +1,20 @@
 package com.myapplication.rescueme
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
+import android.provider.Settings
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -29,14 +34,19 @@ import kotlin.math.sin
 
 class SoundClassifierActivity : AppCompatActivity() {
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sound_classifier)
-
+//        if (!Settings.canDrawOverlays(this)) {
+//            val intent: Intent =
+//                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+//            startActivityForResult(intent, 0)
+//        }
 
         MyService.startService(this, "Listening to you to keep you safe!")
         var soundClassifier2 = SoundClassifier2(this)
-        soundClassifier2.start()
+        soundClassifier2.start(this)
         var labelName = soundClassifier2.labelList[1] // e.g. "No"
         soundClassifier2.probabilities.observe(this) { resultMap ->
             var probability = resultMap[labelName] // e.g. 0.7
@@ -110,7 +120,7 @@ class SoundClassifierActivity : AppCompatActivity() {
         var isPaused: Boolean = false
             set(value) {
                 field = value
-                if (value) stop() else start()
+//                if (value) stop() else start()
             }
 
         /** Names of the model's output classes.  */
@@ -148,7 +158,7 @@ class SoundClassifierActivity : AppCompatActivity() {
             loadLabels(context)
             setupInterpreter(context)
             warmUpModel()
-            startAudioRecord()
+            startAudioRecord(context)
         }
 
 //    override fun onResume(owner: LifecycleOwner) = start()
@@ -159,9 +169,9 @@ class SoundClassifierActivity : AppCompatActivity() {
          * Starts sound classification, which triggers running of
          * `recordingThread` and `recognitionThread`.
          */
-        fun start() {
+        fun start(context: Context) {
             if (!isPaused) {
-                startAudioRecord()
+                startAudioRecord(context)
             }
         }
 
@@ -222,9 +232,9 @@ class SoundClassifierActivity : AppCompatActivity() {
             modelNumClasses = outputShape[1]
             if (modelNumClasses != labelList.size) {
                 Log.e(
-                        TAG,
-                        "Mismatch between metadata number of classes (${labelList.size})" +
-                                " and model output length ($modelNumClasses)"
+                    TAG,
+                    "Mismatch between metadata number of classes (${labelList.size})" +
+                            " and model output length ($modelNumClasses)"
                 )
             }
             // Fill the array with NaNs initially.
@@ -245,11 +255,11 @@ class SoundClassifierActivity : AppCompatActivity() {
                 interpreter.run(inputBuffer, outputBuffer)
 
                 Log.i(
-                        TAG,
-                        "Switches: Done calling interpreter.run(): %s (%.6f ms)".format(
-                                outputBuffer.array().contentToString(),
-                                (SystemClock.elapsedRealtimeNanos() - t0) / NANOS_IN_MILLIS
-                        )
+                    TAG,
+                    "Switches: Done calling interpreter.run(): %s (%.6f ms)".format(
+                        outputBuffer.array().contentToString(),
+                        (SystemClock.elapsedRealtimeNanos() - t0) / NANOS_IN_MILLIS
+                    )
                 )
             }
         }
@@ -264,28 +274,30 @@ class SoundClassifierActivity : AppCompatActivity() {
 
         /** Start a thread to pull audio samples in continuously.  */
         @Synchronized
-        private fun startAudioRecord() {
+        private fun startAudioRecord(context: Context) {
             if (isRecording) return
-            recordingThread = AudioRecordingThread().apply {
+            recordingThread = AudioRecordingThread(context).apply {
                 start()
             }
             isClosed = false
         }
 
         /** Start a thread that runs model inference (i.e., recognition) at a regular interval.  */
-        private fun startRecognition() {
-            recognitionThread = RecognitionThread().apply {
+        private fun startRecognition(context: Context) {
+            recognitionThread = RecognitionThread(context).apply {
                 start()
             }
         }
 
         /** Runnable class to run a thread for audio recording */
-        private inner class AudioRecordingThread : Thread() {
+        private inner class AudioRecordingThread(context: Context) : Thread() {
+            var con: Context = context
             override fun run() {
+
                 var bufferSize = AudioRecord.getMinBufferSize(
-                        options.sampleRate,
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT
+                    options.sampleRate,
+                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT
                 )
                 if (bufferSize == AudioRecord.ERROR || bufferSize == AudioRecord.ERROR_BAD_VALUE) {
                     bufferSize = options.sampleRate * 2
@@ -293,12 +305,12 @@ class SoundClassifierActivity : AppCompatActivity() {
                 }
                 Log.i(TAG, "bufferSize = $bufferSize")
                 val record = AudioRecord(
-                        // including MIC, UNPROCESSED, and CAMCORDER.
-                        MediaRecorder.AudioSource.VOICE_RECOGNITION,
-                        options.sampleRate,
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT,
-                        bufferSize
+                    // including MIC, UNPROCESSED, and CAMCORDER.
+                    MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                    options.sampleRate,
+                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    bufferSize
                 )
                 if (record.state != AudioRecord.STATE_INITIALIZED) {
                     Log.e(TAG, "AudioRecord failed to initialize")
@@ -317,7 +329,7 @@ class SoundClassifierActivity : AppCompatActivity() {
                 Log.i(TAG, "Successfully started AudioRecord recording")
 
                 // Start recognition (model inference) thread.
-                startRecognition()
+                startRecognition(con)
 
                 while (!isInterrupted) {
                     try {
@@ -345,12 +357,13 @@ class SoundClassifierActivity : AppCompatActivity() {
                             // time, which can cause the recognition thread to read garbled audio snippets.
                             recordingBufferLock.withLock {
                                 audioBuffer.copyInto(
-                                        recordingBuffer,
-                                        recordingOffset,
-                                        0,
-                                        bufferSamples
+                                    recordingBuffer,
+                                    recordingOffset,
+                                    0,
+                                    bufferSamples
                                 )
-                                recordingOffset = (recordingOffset + bufferSamples) % recordingBufferSamples
+                                recordingOffset =
+                                    (recordingOffset + bufferSamples) % recordingBufferSamples
                             }
                         }
                     }
@@ -358,7 +371,9 @@ class SoundClassifierActivity : AppCompatActivity() {
             }
         }
 
-        private inner class RecognitionThread : Thread() {
+        private inner class RecognitionThread(context: Context) : Thread() {
+            var con: Context = context
+            @RequiresApi(Build.VERSION_CODES.O)
             override fun run() {
                 if (modelInputLength <= 0 || modelNumClasses <= 0) {
                     Log.e(TAG, "Switches: Cannot start recognition because model is unavailable.")
@@ -409,13 +424,49 @@ class SoundClassifierActivity : AppCompatActivity() {
                     val probList = predictionProbs.map {
                         if (it > probabilityThreshold) it else 0f
                     }
-                Log.i("sound", labelList.toString())
-                Log.i("sound", probList.toString())
+//                Log.i("sound", labelList.toString())
+//                Log.i("sound", probList.toString())
 //                if (probList[1]>90){
-                    val detected = probList[1]>0.9
+                    val detected = probList[1]>0.95
                     if(detected){
-                        Log.i("sound", "RescueMe | " + probList[1].toString() + " | " + detected.toString())
-                        val handler = Handler(Looper.getMainLooper())
+                        var channel_id = "1212"
+                        var channel_name = "1234"
+                        var notification_id = 1223
+                        Log.i(
+                            "sound",
+                            "RescueMe | " + probList[1].toString() + " | " + detected.toString()
+                        )
+                        val channel = NotificationChannel(
+                            channel_id,
+                            channel_name,
+                            NotificationManager.IMPORTANCE_HIGH
+                        )
+                        val builder = Notification.Builder(con, channel_id)
+                            .setContentTitle("Danger Alert!")
+                            .setContentText("Click to open!")
+                            .setSmallIcon(R.drawable.heroine1)
+                            .setChannelId(channel_id)
+                        val notification = builder.build()
+
+                        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                        manager.createNotificationChannel(channel)
+//                        manager.notify(notification_id, notification)
+                        Log.i("Notification", "Notif Sent")
+//                        val intent = Intent(con, MainActivity::class.java)
+//                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+//                        startActivity(intent)
+
+                        val intent = Intent(con, MainActivity::class.java)
+//                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // You need this if starting
+//                        intent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                        //  the activity from a service
+                        //  the activity from a service
+                        intent.action = Intent.ACTION_MAIN
+                        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+                        startActivity(intent)
+                        close()
+
+//                        val handler = Handler(Looper.getMainLooper())
 //                        handler.post(Runnable {
 //                            val intent = Intent(SoundClassifierActivity::class.java, RescueActivity::class.java)
 //                            this@CurrentActivity.startActivity(intent)
