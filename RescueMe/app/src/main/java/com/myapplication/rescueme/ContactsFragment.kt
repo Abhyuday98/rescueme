@@ -151,7 +151,6 @@ class ContactsFragment : Fragment(), View.OnClickListener {
                         var contactNumber = cursor2.getString(cursor2.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
                         contactNumber = formatContactNumber(contactNumber)
                         details.add(contactNumber)
-                        Toast.makeText(activity!!, "Name: $contactName, PhoneNumber: $contactNumber", Toast.LENGTH_LONG).show()
                     }
                     cursor2.close()
                     cursor1.close()
