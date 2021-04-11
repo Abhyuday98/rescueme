@@ -20,7 +20,6 @@ import android.os.*
 import android.provider.Settings
 import android.telephony.SmsManager
 import android.util.Log
-import android.util.SparseIntArray
 import android.view.*
 import android.widget.Button
 import android.widget.EditText
@@ -44,7 +43,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var v: View
 
     // video variables
-    private var duration = 10000 // duration of video in milliseconds
+    private var duration = 30000 // duration of video in milliseconds
     private var VIDEO_PATH = ""
     private val MEDIA_TYPE_IMAGE = 1
     private val MEDIA_TYPE_VIDEO = 2
@@ -164,19 +163,19 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private fun startHelp() {
         Log.i("hasRequiredPermissions", "${hasRequiredPermissions()}")
         if (hasRequiredPermissions()) {
-            startCameraSession()
-            Log.i("CAMERA SESSION START", "CAMERA SESSION STARTED")
+            startVideoRecording()
+            Log.i("video", "video started")
         } else {
             requestRequiredPermissions()
-            Log.i("CAMERA SESSION START", "CAMERA SESSION FAILED")
+            Log.i("video", "video failed to start")
         }
     }
 
     private fun sendHelp() {
-        // figure out video problem
         uploadVideo()
 
-        // send to rescue contacts
+        // send to rescue contacts (commented off to prevent sending sms when testing)
+        val rescuerDetails = getRescuerDetails()
 //        for ((id, details) in rescuerDetails) {
 //            val rescuerNum = details[1]
 //            sendSMS(rescuerNum, "Please rescue me!")
@@ -255,8 +254,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
             // Handle unsuccessful uploads
             Log.i("Upload msg", "Video not sent. ${it.message}")
         }.addOnSuccessListener { taskSnapshot ->
-            // taskSnapshot.metadata contains file metadata such as size, content-type, etc.
-            // ...
             Log.i("Upload msg", "Video sent successfully!")
         }
     }
@@ -292,10 +289,9 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun startCameraSession() {
+    private fun startVideoRecording() {
         val surfaceView = v.findViewById<SurfaceView>(R.id.surfaceView)
         surfaceView.visibility = View.VISIBLE
-        val mSurface = surfaceView.holder.surface
 
         val myCameraManager: CameraManager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         if (myCameraManager.cameraIdList.isEmpty()) {
@@ -311,53 +307,29 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 override fun onError(p0: CameraDevice, p1: Int) {}
 
                 override fun onOpened(cameraDevice: CameraDevice) {
-                    // use the camera
                     val cameraCharacteristics = myCameraManager.getCameraCharacteristics(
                         cameraDevice.id
                     )
 
                     val sensorOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-                    Log.i("orienation sensor", "$sensorOrientation")
+                    Log.i("orientation sensor", "$sensorOrientation")
 
                     cameraCharacteristics[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.let { streamConfigurationMap ->
                         streamConfigurationMap.getOutputSizes(ImageFormat.YUV_420_888)
-                            ?.let { yuvSizes ->
-                                val previewSize = yuvSizes.last()
-
-                                val displayRotation =  activity!!.windowManager.defaultDisplay.rotation
-                                Log.i("orientation display", "$displayRotation")
-
-                                val swappedDimensions = areDimensionsSwapped(displayRotation, cameraCharacteristics)
-
-//                                val swappedDimensions = areDimensionsSwapped(90, cameraCharacteristics)
-                                Log.i("swappedDimensions", "$swappedDimensions")
-
-                                // swap width and height if needed
-                                val rotatedPreviewWidth =
-                                    if (swappedDimensions) previewSize.height else previewSize.width
-                                val rotatedPreviewHeight =
-                                    if (swappedDimensions) previewSize.width else previewSize.height
-
-
-                                surfaceView.holder.setFixedSize(
-                                    rotatedPreviewWidth,
-                                    rotatedPreviewHeight
-                                )
-
+                            ?.let {
                                 try {
                                     VIDEO_PATH = getOutputMediaFile(MEDIA_TYPE_VIDEO).toString()
                                 } catch (e: Exception) {
                                     Log.i("VIDEO_PATH error", e.message)
                                 }
 
-//                                val previewSurface = surfaceView.holder.surface
+                                val mSurface = surfaceView.holder.surface
                                 val previewSurface = MediaCodec.createPersistentInputSurface()
 
                                 recorder = MediaRecorder()
 
                                 // set audio and video source
                                 recorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
-                                // recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA)
                                 recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE)
 
                                 // set profile
@@ -382,16 +354,11 @@ class HomeFragment : Fragment(), View.OnClickListener {
                                     }
                                 })
 
-//                                val previewSurface = recorder.surface
-//                                Log.i("recorder", "recorder: $recorder, ${recorder.surface}")
-
                                 val captureCallback =
                                     object : CameraCaptureSession.StateCallback() {
                                         override fun onConfigureFailed(session: CameraCaptureSession) {}
 
                                         override fun onConfigured(session: CameraCaptureSession) {
-                                            // See if can set preview display for recorder to be the previewSurface then call start.
-
                                             try {
                                                 recorder.start()
                                                 recordingStarted = true
@@ -407,6 +374,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
                                                 )
                                                     .apply {
                                                         addTarget(previewSurface)
+                                                        addTarget(mSurface)
                                                     }
                                             session.setRepeatingRequest(
                                                 previewRequestBuilder.build(),
@@ -416,7 +384,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
                                         }
                                     }
 
-                                cameraDevice.createCaptureSession(mutableListOf(previewSurface), captureCallback, Handler { true })
+                                cameraDevice.createCaptureSession(mutableListOf(mSurface, previewSurface), captureCallback, Handler { true })
                             }
                     }
                 }
@@ -426,92 +394,15 @@ class HomeFragment : Fragment(), View.OnClickListener {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun areDimensionsSwapped(
-        displayRotation: Int,
-        cameraCharacteristics: CameraCharacteristics
-    ): Boolean {
-        var swappedDimensions = false
-        when (displayRotation) {
-            Surface.ROTATION_0, Surface.ROTATION_180 -> {
-                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 90 || cameraCharacteristics.get(
-                        CameraCharacteristics.SENSOR_ORIENTATION
-                    ) == 270
-                ) {
-                    swappedDimensions = true
-                }
-            }
-            Surface.ROTATION_90, Surface.ROTATION_270 -> {
-                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 0 || cameraCharacteristics.get(
-                        CameraCharacteristics.SENSOR_ORIENTATION
-                    ) == 180
-                ) {
-                    swappedDimensions = true
-                }
-            }
-            else -> {
-                // invalid display rotation
-            }
-        }
-        return swappedDimensions
-    }
-
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun startVideoRecording() {
-        try {
-            VIDEO_PATH = getOutputMediaFile(MEDIA_TYPE_VIDEO).toString()
-        } catch (e: Exception) {
-            Log.i("VIDEO_PATH error", e.message)
-        }
-
-        recorder = MediaRecorder()
-
-        // set audio and video source
-        recorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
-//        recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA)
-        recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE)
-
-        // set profile
-        recorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_720P))
-
-        // set output file
-        recorder.setOutputFile(VIDEO_PATH)
-
-        recorder.setMaxDuration(duration)
-
-//        recorder.setPreviewDisplay(v.findViewById<SurfaceView>(R.id.surfaceView).holder.surface)
-//        recorder.setPreviewDisplay(recorder.surface)
-//        recorder.setPreviewDisplay(mPreviewSurface)
-
-        recorder.prepare()
-
-        try {
-            recorder.start()
-            recordingStarted = true
-            Toast.makeText(activity!!, "Recording video...", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Log.i("recorder start error", e.message)
-            recordingStarted = false
-        }
-
-        // if max duration reached, stop recording.
-        recorder.setOnInfoListener(object : MediaRecorder.OnInfoListener {
-            override fun onInfo(mr: MediaRecorder?, what: Int, extra: Int) {
-                if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
-                    stopVideoRecording()
-                }
-            }
-        })
-    }
-
     // stops video recording
     private fun stopVideoRecording() {
         try {
             recorder.stop()
+            Toast.makeText(activity!!, "Video has stopped recording.", Toast.LENGTH_SHORT).show()
         } catch (e : java.lang.Exception){
-            Log.i("recorder error", "recorder error: " + e.message)
+            Log.i("recorder error", e.message)
         }
-//        recorder.stop()
+
         recorder.reset()
         recorder.release()
         recordingStarted = false
@@ -738,7 +629,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
             sendRescueDetails()
         }
 
-        Log.i("lifecycle", "onDestroy, $isTimerRunning")
+        Log.i("lifecycle", "onStop, $isTimerRunning")
     }
 
     override fun onDestroy() {
