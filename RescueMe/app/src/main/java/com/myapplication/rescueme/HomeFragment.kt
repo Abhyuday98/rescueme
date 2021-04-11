@@ -417,26 +417,22 @@ class HomeFragment : Fragment(), View.OnClickListener {
         startHelp()
         mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        if (v != null) {
-            val infoTv = v.findViewById<TextView>(R.id.infoTv)
-            infoTv.text = "You have asked for help. If this is a false alarm, please enter the correct passcode."
+        val infoTv = v.findViewById<TextView>(R.id.infoTv)
+        infoTv.text = "You have asked for help. If this is a false alarm, please enter the correct passcode."
 
-            val helpBtn = v.findViewById<Button>(R.id.helpBtn)
-            helpBtn.visibility = View.GONE
+        val helpBtn = v.findViewById<Button>(R.id.helpBtn)
+        helpBtn.visibility = View.GONE
 
-            val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
-            enterPasscodeEditText.visibility = View.VISIBLE
+        val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
+        enterPasscodeEditText.visibility = View.VISIBLE
 
-            val enterButton = v.findViewById<Button>(R.id.enterButton)
-            enterButton.visibility = View.VISIBLE
+        val enterButton = v.findViewById<Button>(R.id.enterButton)
+        enterButton.visibility = View.VISIBLE
 
-            timerDisplay = v.findViewById(R.id.timerDisplay);
-            timerDisplay.visibility = View.VISIBLE
+        timerDisplay = v.findViewById(R.id.timerDisplay);
+        timerDisplay.visibility = View.VISIBLE
 
-            mCountDownTimer.start();
-        } else {
-            Log.i("View v", "v is null.")
-        }
+        mCountDownTimer.start();
     }
 
     // makes timer pause and disappear.
@@ -447,61 +443,53 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
         mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        if (v != null) {
-            val infoTv = v.findViewById<TextView>(R.id.infoTv)
-            infoTv.text = "If you need immediate help, click the Help button."
+        val infoTv = v.findViewById<TextView>(R.id.infoTv)
+        infoTv.text = "If you need immediate help, click the Help button."
 
-            val helpBtn = v.findViewById<Button>(R.id.helpBtn)
-            helpBtn.visibility = View.VISIBLE
+        val helpBtn = v.findViewById<Button>(R.id.helpBtn)
+        helpBtn.visibility = View.VISIBLE
 
-            val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
-            enterPasscodeEditText.visibility = View.GONE
+        val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
+        enterPasscodeEditText.visibility = View.GONE
 
-            val enterButton = v.findViewById<Button>(R.id.enterButton)
-            enterButton.visibility = View.GONE
+        val enterButton = v.findViewById<Button>(R.id.enterButton)
+        enterButton.visibility = View.GONE
 
-            timerDisplay = v.findViewById(R.id.timerDisplay);
-            timerDisplay.visibility = View.GONE
+        timerDisplay = v.findViewById(R.id.timerDisplay);
+        timerDisplay.visibility = View.GONE
 
-            mCountDownTimer.cancel();
-        } else {
-            Log.i("View v", "v is null.")
-        }
+        mCountDownTimer.cancel();
     }
 
     private fun enterPasscode() {
-        if (v != null) {
-            val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
-            val enterPasscodeString = enterPasscodeEditText.text.toString()
-            if (isCorrectPasscode(enterPasscodeString)) {
-                // check if recording started before calling stopVideoRecording(), otherwise will crash.
-                if (recordingStarted) {
-                    stopVideoRecording()
-                }
-                stopTimer()
-                Toast.makeText(
-                    activity!!,
-                    "Correct passcode entered. Timer has stopped.",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                // Delete video if not used.
-                val file = File(VIDEO_PATH)
-                val deleted = file.delete()
-                if (deleted) {
-                    Log.i("Delete", "$VIDEO_PATH is successfully deleted")
-                }
-            } else {
-                Toast.makeText(
-                    activity!!,
-                    "Incorrect passcode entered. Please try again.",
-                    Toast.LENGTH_SHORT
-                ).show()
+        val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
+        val enterPasscodeString = enterPasscodeEditText.text.toString()
+        if (isCorrectPasscode(enterPasscodeString)) {
+            // check if recording started before calling stopVideoRecording(), otherwise will crash.
+            if (recordingStarted) {
+                stopVideoRecording()
             }
-            enterPasscodeEditText.text = null
+            stopTimer()
+            Toast.makeText(
+                activity!!,
+                "Correct passcode entered. Timer has stopped.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            // Delete video if not used.
+            val file = File(VIDEO_PATH)
+            val deleted = file.delete()
+            if (deleted) {
+                Log.i("Delete", "$VIDEO_PATH is successfully deleted")
+            }
         } else {
-            Log.i("View v", "v is null.")
+            Toast.makeText(
+                activity!!,
+                "Incorrect passcode entered. Please try again.",
+                Toast.LENGTH_SHORT
+            ).show()
         }
+        enterPasscodeEditText.text = null
     }
 
     private fun String.toMD5(): String {

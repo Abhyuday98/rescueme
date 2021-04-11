@@ -46,12 +46,6 @@ class ContactsFragment : Fragment(), View.OnClickListener {
         v = inflater.inflate(R.layout.fragment_contacts, container, false)
         setupContactsList()
 
-        if (v == null) {
-            Log.i("View v", "v is null")
-        } else {
-            Log.i("View v", "v is not null")
-        }
-
         // temporarily just remove based on item click
         val contactsListView = v.findViewById<ListView>(R.id.contactsListView)
         contactsListView.setOnItemClickListener { list, _, index, _ ->
@@ -228,12 +222,8 @@ class ContactsFragment : Fragment(), View.OnClickListener {
 
         myAdapter = ContactAdapter(activity!!, contactsList)
 
-        if (v == null) {
-            Log.i("View v", "v is null.")
-        } else {
-            val contactsListView = v.findViewById<ListView>(R.id.contactsListView)
-            contactsListView.adapter = myAdapter
-        }
+        val contactsListView = v.findViewById<ListView>(R.id.contactsListView)
+        contactsListView.adapter = myAdapter
     }
 
     // join any spaces, add +65 in front if no prefix starting with +.
