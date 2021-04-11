@@ -36,13 +36,4 @@
 
     </group>
 
-    <item android:title="More">
-        <menu>
-            <item
-                android:id="@+id/share"
-                android:icon="@drawable/ic_share"
-                android:title="Share" />
-        </menu>
-    </item>
-
 </menu>
