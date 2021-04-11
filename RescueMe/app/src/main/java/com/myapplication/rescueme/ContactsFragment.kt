@@ -154,7 +154,8 @@ class ContactsFragment : Fragment(), View.OnClickListener {
                     // a contact may have multiple phone numbers
                     while (cursor2!!.moveToNext()) {
                         // get phone number
-                        val contactNumber = cursor2.getString(cursor2.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                        var contactNumber = cursor2.getString(cursor2.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                        contactNumber = formatContactNumber(contactNumber)
                         details.add(contactNumber)
                         Toast.makeText(activity!!, "Name: $contactName, PhoneNumber: $contactNumber", Toast.LENGTH_LONG).show()
                     }
@@ -215,7 +216,7 @@ class ContactsFragment : Fragment(), View.OnClickListener {
             val pieces = line.split("\t")
             val contactId = pieces[0]
             val contactName = pieces[1]
-            val contactNumber = formatContactNumber(pieces[2])
+            val contactNumber = pieces[2]
 
             // create list of contact objects
             val contact = Contact(contactId, contactName, contactNumber)

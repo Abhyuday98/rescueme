@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -141,8 +142,10 @@ class MainActivity : AppCompatActivity() {
                     // a contact may have multiple phone numbers
                     while (cursor2!!.moveToNext()) {
                         // get phone number
-                        val contactNumber = cursor2.getString(cursor2.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                        var contactNumber = cursor2.getString(cursor2.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                        contactNumber = formatContactNumber(contactNumber)
                         details.add(contactNumber)
+                        Log.i("details", "contactNumber: $contactNumber")
                     }
                     cursor2.close()
                     cursor1.close()
@@ -201,7 +204,7 @@ class MainActivity : AppCompatActivity() {
             val pieces = line.split("\t")
             val contactId = pieces[0]
             val contactName = pieces[1]
-            val contactNumber = formatContactNumber(pieces[2])
+            val contactNumber = pieces[2]
 
             // create list of contact objects
             val contact = Contact(contactId, contactName, contactNumber)
