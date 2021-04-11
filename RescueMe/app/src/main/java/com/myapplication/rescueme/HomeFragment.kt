@@ -21,15 +21,15 @@ import android.provider.Settings
 import android.telephony.SmsManager
 import android.util.Log
 import android.view.*
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.android.synthetic.main.activity_home.*
 import java.io.File
@@ -77,12 +77,120 @@ class HomeFragment : Fragment(), View.OnClickListener {
         val helpBtn = v.findViewById<Button>(R.id.helpBtn)
         helpBtn.setOnClickListener(this)
 
+        val rescuedBtn = v.findViewById<Button>(R.id.rescuedBtn)
+        rescuedBtn.setOnClickListener(this)
+
         val enterButton = v.findViewById<Button>(R.id.enterButton)
         enterButton.setOnClickListener(this)
 
         mCountDownTimer = createCountDownTimer()
 
+        checkRescue()
+
         return v
+    }
+
+    private fun displayRescuedFeatures() {
+        val rescuePasscodeEditText = v.findViewById<EditText>(R.id.rescuePasscodeEditText)
+        rescuePasscodeEditText.visibility = View.VISIBLE
+
+        val rescuedBtn = v.findViewById<Button>(R.id.rescuedBtn)
+        rescuedBtn.visibility = View.VISIBLE
+
+        val helpBtn = v.findViewById<Button>(R.id.helpBtn)
+        helpBtn.visibility = View.GONE
+
+        val infoTv = v.findViewById<TextView>(R.id.infoTv)
+        infoTv.text = "Have you been rescued?"
+    }
+
+    private fun checkRescue() {
+        val database = Firebase.database
+        val myRef = database.getReference("RescueRecords")
+
+        //read records
+        myRef.get().addOnSuccessListener {
+            var userNumber = ""
+
+            var data = it.value
+            val scan = Scanner(activity!!.openFileInput("my_contact.txt"))
+            while(scan.hasNextLine()) {
+                var userDet = scan.nextLine().split("\t")
+                userNumber = userDet[1]
+                Log.i("userNumber", userNumber)
+            }
+
+            Log.i("firebase", "Got value ${it.value}")
+            if (data != null && data is HashMap<*,*>) {
+                for (victim in data.keys) {
+                    Log.i("userNumber", "victim: $victim")
+                    Log.i("comparison", "victim:<$victim>, user:<$userNumber>")
+                    if (victim == userNumber) {
+                        displayRescuedFeatures()
+                        break
+                    }
+                }
+            } else {
+                Toast.makeText(activity, "Error getting data this", Toast.LENGTH_SHORT).show()
+            }
+        }.addOnFailureListener{
+            Log.e("firebase", "Error getting data", it)
+        }
+    }
+
+    // verify rescue
+    private fun verifyRescue() {
+        val rescuePasscodeEditText = v.findViewById<EditText>(R.id.rescuePasscodeEditText)
+        val rescuePasscodeString = rescuePasscodeEditText.text.toString()
+        if (isCorrectPasscode(rescuePasscodeString)) {
+            Toast.makeText(
+                activity!!,
+                "You have been rescued!",
+                Toast.LENGTH_SHORT
+            ).show()
+            endRescue()
+        } else {
+            Toast.makeText(
+                activity!!,
+                "Incorrect passcode entered. Please try again.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+        rescuePasscodeEditText.text = null
+    }
+
+    // stop rescue process
+    private fun endRescue() {
+        val victimNum = getVictimDetails()[1]
+
+        val rescuePasscodeEditText = v.findViewById<EditText>(R.id.rescuePasscodeEditText)
+        rescuePasscodeEditText.visibility = View.GONE
+
+        val rescuedBtn = v.findViewById<Button>(R.id.rescuedBtn)
+        rescuedBtn.visibility = View.GONE
+
+        val helpBtn = v.findViewById<Button>(R.id.helpBtn)
+        helpBtn.visibility = View.VISIBLE
+
+        val infoTv = v.findViewById<TextView>(R.id.infoTv)
+        infoTv.text = "If you need immediate help, click the Help button."
+
+        // stop location
+        LocationService.stopService(activity!!) // Figure out how to stop?
+
+        // delete victim details from firebase
+        val database = Firebase.database
+        val victimRefDatabase = database.getReference("RescueRecords").child(victimNum)
+        victimRefDatabase.removeValue()
+
+        // delete victim's video from cloud storage
+        val storageRef = FirebaseStorage.getInstance().reference
+        val victimRefStorage = storageRef.child(victimNum)
+        victimRefStorage.delete().addOnSuccessListener {
+            Log.i("Delete video", "video deleted successfully")
+        }.addOnFailureListener {
+            Log.i("Delete video error", "${it.message}")
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -571,8 +679,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         }
         stopTimer()
         sendHelp()
-        val infoTv = v.findViewById<TextView>(R.id.infoTv)
-        infoTv.text = "If you need immediate help, click the \"Help!\" button."
+        displayRescuedFeatures()
         Toast.makeText(
             activity!!,
             "Rescue details have been sent to your contacts.",
@@ -635,6 +742,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         when (v!!.id) {
             R.id.helpBtn -> startTimer()
             R.id.enterButton -> enterPasscode()
+            R.id.rescuedBtn -> verifyRescue()
         }
     }
 
