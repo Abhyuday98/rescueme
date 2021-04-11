@@ -36,20 +36,6 @@ class ContactAdapter(private val context: Context, private val dataSource: Array
         cName.text = contact.name
         cNumber.text = contact.number
 
-        val removeImageBtn = rowView.findViewById<ImageButton>(R.id.removeImageBtn)
-
-        removeImageBtn.isFocusable = false
-        removeImageBtn.isFocusableInTouchMode = false
-
-        // Figure out how to remove item based on the ImageButton click.
-        removeImageBtn.setOnClickListener {
-            fun onClick(v: View?) {
-                dataSource.removeAt(position)
-                this.notifyDataSetChanged()
-                Toast.makeText(context, "button has been clicked!", Toast.LENGTH_SHORT).show()
-            }
-        }
-
         return rowView
     }
 

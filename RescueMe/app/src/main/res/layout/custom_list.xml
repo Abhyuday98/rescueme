@@ -27,13 +27,4 @@
 
     </LinearLayout>
 
-    <ImageButton
-        android:id="@+id/removeImageBtn"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:src="@drawable/ic_remove"
-        android:layout_alignParentRight="true"
-        android:backgroundTint="@color/white"
-        android:focusable="false"/>
-
 </RelativeLayout>
