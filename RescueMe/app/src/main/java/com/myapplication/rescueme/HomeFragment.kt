@@ -13,11 +13,14 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.location.LocationManager
 import android.media.CamcorderProfile
+import android.media.MediaCodec
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.*
 import android.provider.Settings
+import android.telephony.SmsManager
 import android.util.Log
+import android.util.SparseIntArray
 import android.view.*
 import android.widget.Button
 import android.widget.EditText
@@ -36,9 +39,9 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
+
 class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var v: View
-    private var isRescued = true
 
     // video variables
     private var duration = 10000 // duration of video in milliseconds
@@ -55,7 +58,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private var isTimerRunning = false
 
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         activity!!.title = "Rescue Me"
 
@@ -83,18 +86,31 @@ class HomeFragment : Fragment(), View.OnClickListener {
         return v
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun hasRequiredPermissions(): Boolean {
         return ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(
+            activity!!,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(
+            activity!!,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.FOREGROUND_SERVICE) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(
+            activity!!,
+            Manifest.permission.FOREGROUND_SERVICE
+        ) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(
+            activity!!,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun requestRequiredPermissions() {
         ActivityCompat.requestPermissions(
             activity!!, arrayOf(
@@ -104,7 +120,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.INTERNET,
                 Manifest.permission.FOREGROUND_SERVICE,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+                Manifest.permission.SEND_SMS
             ), 222
         )
     }
@@ -130,7 +147,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         alert.show()
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -143,24 +160,38 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // Starts getting location, recording video
-    @RequiresApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun startHelp() {
         Log.i("hasRequiredPermissions", "${hasRequiredPermissions()}")
         if (hasRequiredPermissions()) {
             startCameraSession()
+            Log.i("CAMERA SESSION START", "CAMERA SESSION STARTED")
         } else {
             requestRequiredPermissions()
+            Log.i("CAMERA SESSION START", "CAMERA SESSION FAILED")
         }
     }
 
     private fun sendHelp() {
+        // figure out video problem
         uploadVideo()
 
-        isRescued = false
+        // send to rescue contacts
+//        for ((id, details) in rescuerDetails) {
+//            val rescuerNum = details[1]
+//            sendSMS(rescuerNum, "Please rescue me!")
+//        }
+
         // goes to LocationService to update details and location continuously.
         LocationService.startService(activity!!, "Retrieving location...")
 
         Toast.makeText(activity!!, "Rescue details successfully sent!", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun sendSMS(phoneNumber: String, message: String) {
+        Log.i("SMS", "Sending SMS")
+        val smsManager = SmsManager.getDefault() as SmsManager
+        smsManager.sendTextMessage(phoneNumber, null, message, null, null)
     }
 
     // get victim name and number in the form of arraylist: [name, number]
@@ -182,6 +213,29 @@ class HomeFragment : Fragment(), View.OnClickListener {
         }
 
         val result = arrayListOf(name, contactNumber)
+        return result
+    }
+
+    // get rescuer details in the form of hashmap: id -> [name, number]
+    private fun getRescuerDetails() : HashMap<String, ArrayList<String>> {
+        if (!fileExist("contacts.txt")) {
+            return HashMap()
+        }
+
+        val result = HashMap<String, ArrayList<String>>()
+
+        val scan = Scanner(activity!!.openFileInput("contacts.txt"))
+        while (scan.hasNextLine()) {
+            val line = scan.nextLine()
+            val pieces = line.split("\t")
+
+            val id = pieces[0]
+            val name = pieces[1]
+            val contactNumber = pieces[2]
+
+            result[id] = arrayListOf(name, contactNumber)
+        }
+
         return result
     }
 
@@ -241,6 +295,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private fun startCameraSession() {
         val surfaceView = v.findViewById<SurfaceView>(R.id.surfaceView)
         surfaceView.visibility = View.VISIBLE
+        val mSurface = surfaceView.holder.surface
 
         val myCameraManager: CameraManager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         if (myCameraManager.cameraIdList.isEmpty()) {
@@ -257,41 +312,95 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
                 override fun onOpened(cameraDevice: CameraDevice) {
                     // use the camera
-                    startVideoRecording()
                     val cameraCharacteristics = myCameraManager.getCameraCharacteristics(
                         cameraDevice.id
                     )
+
+                    val sensorOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                    Log.i("orienation sensor", "$sensorOrientation")
 
                     cameraCharacteristics[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.let { streamConfigurationMap ->
                         streamConfigurationMap.getOutputSizes(ImageFormat.YUV_420_888)
                             ?.let { yuvSizes ->
                                 val previewSize = yuvSizes.last()
 
-                                val displayRotation =
-                                    activity!!.windowManager.defaultDisplay.rotation
-                                val swappedDimensions = areDimensionsSwapped(
-                                    displayRotation,
-                                    cameraCharacteristics
-                                )
+                                val displayRotation =  activity!!.windowManager.defaultDisplay.rotation
+                                Log.i("orientation display", "$displayRotation")
+
+                                val swappedDimensions = areDimensionsSwapped(displayRotation, cameraCharacteristics)
+
+//                                val swappedDimensions = areDimensionsSwapped(90, cameraCharacteristics)
+                                Log.i("swappedDimensions", "$swappedDimensions")
+
                                 // swap width and height if needed
                                 val rotatedPreviewWidth =
                                     if (swappedDimensions) previewSize.height else previewSize.width
                                 val rotatedPreviewHeight =
                                     if (swappedDimensions) previewSize.width else previewSize.height
 
+
                                 surfaceView.holder.setFixedSize(
                                     rotatedPreviewWidth,
                                     rotatedPreviewHeight
                                 )
 
-                                val previewSurface = surfaceView.holder.surface
+                                try {
+                                    VIDEO_PATH = getOutputMediaFile(MEDIA_TYPE_VIDEO).toString()
+                                } catch (e: Exception) {
+                                    Log.i("VIDEO_PATH error", e.message)
+                                }
+
+//                                val previewSurface = surfaceView.holder.surface
+                                val previewSurface = MediaCodec.createPersistentInputSurface()
+
+                                recorder = MediaRecorder()
+
+                                // set audio and video source
+                                recorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
+                                // recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA)
+                                recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE)
+
+                                // set profile
+                                recorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_720P))
+
+                                // set output file
+                                recorder.setOutputFile(VIDEO_PATH)
+
+                                recorder.setMaxDuration(duration)
+
+                                recorder.setInputSurface(previewSurface)
+                                recorder.setOrientationHint(90)
+
+                                recorder.prepare()
+
+                                // if max duration reached, stop recording.
+                                recorder.setOnInfoListener(object : MediaRecorder.OnInfoListener {
+                                    override fun onInfo(mr: MediaRecorder?, what: Int, extra: Int) {
+                                        if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
+                                            stopVideoRecording()
+                                        }
+                                    }
+                                })
+
+//                                val previewSurface = recorder.surface
+//                                Log.i("recorder", "recorder: $recorder, ${recorder.surface}")
 
                                 val captureCallback =
                                     object : CameraCaptureSession.StateCallback() {
                                         override fun onConfigureFailed(session: CameraCaptureSession) {}
 
                                         override fun onConfigured(session: CameraCaptureSession) {
-                                            // session configured
+                                            // See if can set preview display for recorder to be the previewSurface then call start.
+
+                                            try {
+                                                recorder.start()
+                                                recordingStarted = true
+                                                Toast.makeText(activity!!, "Recording video...", Toast.LENGTH_SHORT).show()
+                                            } catch (e: Exception) {
+                                                Log.i("recorder start error", e.message)
+                                                recordingStarted = false
+                                            }
+
                                             val previewRequestBuilder =
                                                 cameraDevice.createCaptureRequest(
                                                     CameraDevice.TEMPLATE_PREVIEW
@@ -306,6 +415,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
                                             )
                                         }
                                     }
+
+                                cameraDevice.createCaptureSession(mutableListOf(previewSurface), captureCallback, Handler { true })
                             }
                     }
                 }
@@ -357,17 +468,21 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
         // set audio and video source
         recorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
-        recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA)
+//        recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA)
+        recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE)
 
         // set profile
-        recorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P))
+        recorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_720P))
 
         // set output file
         recorder.setOutputFile(VIDEO_PATH)
 
         recorder.setMaxDuration(duration)
 
-        recorder.setPreviewDisplay(v.findViewById<SurfaceView>(R.id.surfaceView).holder.surface)
+//        recorder.setPreviewDisplay(v.findViewById<SurfaceView>(R.id.surfaceView).holder.surface)
+//        recorder.setPreviewDisplay(recorder.surface)
+//        recorder.setPreviewDisplay(mPreviewSurface)
+
         recorder.prepare()
 
         try {
@@ -391,7 +506,12 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     // stops video recording
     private fun stopVideoRecording() {
-        recorder.stop()
+        try {
+            recorder.stop()
+        } catch (e : java.lang.Exception){
+            Log.i("recorder error", "recorder error: " + e.message)
+        }
+//        recorder.stop()
         recorder.reset()
         recorder.release()
         recordingStarted = false
@@ -401,7 +521,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // temp trigger via button click. Once we have audio detected, then can shift this function.
-    @RequiresApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun startTimer() {
         startHelp()
         mSimpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -468,7 +588,11 @@ class HomeFragment : Fragment(), View.OnClickListener {
                     stopVideoRecording()
                 }
                 stopTimer()
-                Toast.makeText(activity!!, "Correct passcode entered. Timer has stopped.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    activity!!,
+                    "Correct passcode entered. Timer has stopped.",
+                    Toast.LENGTH_SHORT
+                ).show()
 
                 // Delete video if not used.
                 val file = File(VIDEO_PATH)
@@ -537,7 +661,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
     // returns CountDownTimer object with the milliseconds read from time.txt
     private fun createCountDownTimer(): CountDownTimer {
         val savedTime = getTime()
-//        val savedTime = 10000.toLong()
         val mCountDownTimer: CountDownTimer = object : CountDownTimer(savedTime, 1000) {
             @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
             override fun onFinish() {
@@ -571,7 +694,11 @@ class HomeFragment : Fragment(), View.OnClickListener {
         sendHelp()
         val infoTv = v.findViewById<TextView>(R.id.infoTv)
         infoTv.text = "If you need immediate help, click the \"Help!\" button."
-        Toast.makeText(activity!!,"Rescue details have been sent to your contacts.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+            activity!!,
+            "Rescue details have been sent to your contacts.",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun showAlertDialog() {
@@ -584,7 +711,11 @@ class HomeFragment : Fragment(), View.OnClickListener {
         }
 
         builder.setNegativeButton("No") { dialog, which ->
-            Toast.makeText(activity!!, "Please enter the correct passcode to stop the timer.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                activity!!,
+                "Please enter the correct passcode to stop the timer.",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         builder.show()
@@ -600,6 +731,16 @@ class HomeFragment : Fragment(), View.OnClickListener {
         Log.i("lifecycle", "onPause, $isTimerRunning")
     }
 
+    override fun onStop() {
+        super.onStop()
+
+        if (isTimerRunning) {
+            sendRescueDetails()
+        }
+
+        Log.i("lifecycle", "onDestroy, $isTimerRunning")
+    }
+
     override fun onDestroy() {
         super.onDestroy()
 
@@ -610,7 +751,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         Log.i("lifecycle", "onDestroy, $isTimerRunning")
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onClick(v: View?) {
         when (v!!.id) {
             R.id.helpBtn -> startTimer()
