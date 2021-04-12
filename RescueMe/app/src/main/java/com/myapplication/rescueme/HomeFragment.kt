@@ -87,6 +87,14 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
         checkRescue()
 
+        val extras = activity!!.intent.extras
+        if (extras != null) {
+            val danger = extras.getString("danger")!!
+            if (danger == "yes") {
+                startTimer()
+            }
+        }
+
         return v
     }
 

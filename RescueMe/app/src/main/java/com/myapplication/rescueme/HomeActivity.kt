@@ -89,7 +89,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             var probability = resultMap[labelName] // e.g. 0.7
             Log.i("sound", "$labelName -> ${probability.toString()}")
         }
-
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -539,7 +538,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 //                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
 //                        startActivity(intent)
 
-                        val intent = Intent(con, MainActivity::class.java)
+                        val intent = Intent(con, HomeActivity::class.java)
 //                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // You need this if starting
 //                        intent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
                         //  the activity from a service
