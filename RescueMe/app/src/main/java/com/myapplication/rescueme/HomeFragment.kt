@@ -86,18 +86,21 @@ class HomeFragment : Fragment(), View.OnClickListener {
         mCountDownTimer = createCountDownTimer()
 
         checkRescue()
+        val activity = activity!!
+        val action = activity.intent.action
+//        Log.i("danger", action)
 
-        val extras = activity!!.intent.extras
-        if (extras != null) {
-            val danger = extras.getString("danger")!!
-            if (danger == "yes") {
+        if (action != null) {
+            if (action == "danger") {
                 Log.i("danger", "yes")
+                MyService.stopService(activity)
+
                 startTimer()
             } else {
                 Log.i("danger", "no")
             }
         } else {
-            Log.i("danger", "extras is null")
+            Log.i("danger", "action is null")
         }
 
         return v
@@ -152,6 +155,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // verify rescue
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun verifyRescue() {
         val rescuePasscodeEditText = v.findViewById<EditText>(R.id.rescuePasscodeEditText)
         val rescuePasscodeString = rescuePasscodeEditText.text.toString()
@@ -173,6 +177,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // stop rescue process
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun endRescue() {
         val victimNum = getVictimDetails()[1]
 
@@ -204,6 +209,10 @@ class HomeFragment : Fragment(), View.OnClickListener {
         }.addOnFailureListener {
             Log.i("Delete video error", "${it.message}")
         }
+
+//        val it = Intent(activity!!, MainActivity::class.java)
+//        it.action = "start"
+//        startActivity(it)
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -557,6 +566,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     // makes timer pause and disappear.
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun stopTimer() {
         isTimerRunning = false
         val mDrawerLayout = activity!!.drawer_layout
@@ -580,8 +590,12 @@ class HomeFragment : Fragment(), View.OnClickListener {
         timerDisplay.visibility = View.GONE
 
         mCountDownTimer.cancel();
+        Log.i("danger", "start the classifier")
+
+        (activity as HomeActivity).startClassifier()
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun enterPasscode() {
         val enterPasscodeEditText = v.findViewById<EditText>(R.id.enterPasscodeEditText)
         val enterPasscodeString = enterPasscodeEditText.text.toString()
@@ -686,6 +700,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         return mCountDownTimer
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun sendRescueDetails() {
         if (recordingStarted) {
             stopVideoRecording()
@@ -700,6 +715,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         ).show()
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun showAlertDialog() {
         val builder = AlertDialog.Builder(activity!!)
         builder.setTitle("Are you sure you want to exit?")
@@ -720,6 +736,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         builder.show()
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onPause() {
         super.onPause()
 
@@ -730,6 +747,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         Log.i("lifecycle", "onPause, $isTimerRunning")
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onStop() {
         super.onStop()
 
@@ -740,6 +758,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         Log.i("lifecycle", "onStop, $isTimerRunning")
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onDestroy() {
         super.onDestroy()
 

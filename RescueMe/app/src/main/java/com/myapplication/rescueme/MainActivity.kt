@@ -39,11 +39,27 @@ class MainActivity : AppCompatActivity() {
             rewrite() // rewrite the file with new contactsList
         }
 
-        // go directly to HomeActivity if passcode exists
-        if (fileExist("passcode.txt")) {
-            val it = Intent(this, HomeActivity::class.java)
-            startActivity(it)
+        val extras = intent.extras
+//        Log.i("danger", intent.extras.toString())
+        if (extras != null) {
+//            Log.i("extra", "1 "+extras.getString("danger"))
+            val danger = extras.getString("danger")!!
+            if (danger == "yes") {
+//                Log.i("danger", "yes")
+                val it = Intent(this, HomeActivity::class.java)
+                it.action = "danger"
+                startActivity(it)
+            }
+        }  else {
+            // go directly to HomeActivity if passcode exists
+            if (fileExist("passcode.txt")) {
+                val it = Intent(this, HomeActivity::class.java)
+                it.action = "start"
+                startActivity(it)
+            }
         }
+
+
     }
 
     private fun rewrite() {
