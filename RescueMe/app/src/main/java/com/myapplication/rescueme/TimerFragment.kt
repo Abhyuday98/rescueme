@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.myapplication.rescueme.Helper.Companion.fileExist
 import java.io.PrintStream
 import java.util.*
 
@@ -37,7 +38,7 @@ class TimerFragment : Fragment(), View.OnClickListener {
 
     private fun displayCurrentTime() {
         val currentTimerTextView = v.findViewById<TextView>(R.id.currentTimerTextView)
-        if (fileExist("time.txt")) {
+        if (fileExist(activity!!.baseContext, "time.txt")) {
             val scan = Scanner(activity!!.openFileInput("time.txt"))
 
             while (scan.hasNextLine()) {
@@ -68,11 +69,6 @@ class TimerFragment : Fragment(), View.OnClickListener {
         timeEditText.text.clear()
 
         Toast.makeText(activity!!, "Time has been saved.", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun fileExist(fname: String?): Boolean {
-        val file = activity!!.baseContext.getFileStreamPath(fname)
-        return file.exists()
     }
 
     override fun onClick(v: View?) {

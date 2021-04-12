@@ -18,6 +18,8 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import com.myapplication.rescueme.Helper.Companion.fileExist
+import com.myapplication.rescueme.Helper.Companion.formatContactNumber
 import java.io.File
 import java.io.PrintStream
 import java.util.*
@@ -166,7 +168,7 @@ class ContactsFragment : Fragment(), View.OnClickListener {
         var contactExists = false
 
         // check if file exist before reading.
-        if (fileExist("contacts.txt")) {
+        if (fileExist(activity!!.baseContext, "contacts.txt")) {
             val scan = Scanner(activity!!.openFileInput("contacts.txt"))
 
             while (scan.hasNextLine()) {
@@ -193,13 +195,13 @@ class ContactsFragment : Fragment(), View.OnClickListener {
         }
     }
 
-    private fun fileExist(fname: String?): Boolean {
-        val file = activity!!.baseContext.getFileStreamPath(fname)
-        return file.exists()
-    }
+//    private fun fileExist(fname: String?): Boolean {
+//        val file = activity!!.baseContext.getFileStreamPath(fname)
+//        return file.exists()
+//    }
 
     private fun setupContactsList() {
-        if (!fileExist("contacts.txt")) {
+        if (!fileExist(activity!!.baseContext, "contacts.txt")) {
             return
         }
 
@@ -223,20 +225,6 @@ class ContactsFragment : Fragment(), View.OnClickListener {
 
         val contactsListView = v.findViewById<ListView>(R.id.contactsListView)
         contactsListView.adapter = myAdapter
-    }
-
-    // join any spaces, add +65 in front if no prefix starting with +.
-    private fun formatContactNumber(contactNumber : String) : String {
-        var result = ""
-
-        if (contactNumber.substring(0, 1) != "+") {
-            result = "+65$contactNumber"
-        } else {
-            result = contactNumber
-        }
-
-        result = result.split(" ").joinToString("")
-        return result
     }
 
     private fun showAlertDialog() {

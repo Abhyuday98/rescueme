@@ -7,6 +7,8 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import com.myapplication.rescueme.Helper.Companion.fileExist
+import com.myapplication.rescueme.Helper.Companion.toMD5
 import java.io.PrintStream
 import java.security.MessageDigest
 import java.util.*
@@ -16,15 +18,6 @@ class FirstPasscodeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_first_passcode)
-    }
-
-    private fun String.toMD5(): String {
-        val bytes = MessageDigest.getInstance("MD5").digest(this.toByteArray())
-        return bytes.toHex()
-    }
-
-    private fun ByteArray.toHex(): String {
-        return joinToString("") { "%02x".format(it) }
     }
 
     // hash the passcode, save to file, then go to HomeActivity
@@ -40,7 +33,7 @@ class FirstPasscodeActivity : AppCompatActivity() {
         }
 
         // Only if file with passcode exist, then go HomeActivity.
-        if (fileExist("passcode.txt")) {
+        if (fileExist(baseContext, "passcode.txt")) {
             val it = Intent(this, HomeActivity::class.java)
             startActivity(it)
         }
@@ -51,11 +44,6 @@ class FirstPasscodeActivity : AppCompatActivity() {
         val output = PrintStream(openFileOutput("passcode.txt", MODE_PRIVATE))
         output.println(hashedPasscode)
         output.close()
-    }
-
-    private fun fileExist(fname: String?): Boolean {
-        val file = baseContext.getFileStreamPath(fname)
-        return file.exists()
     }
 
 }

@@ -11,6 +11,8 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.myapplication.rescueme.Helper.Companion.fileExist
+import com.myapplication.rescueme.Helper.Companion.formatContactNumber
 import kotlinx.android.synthetic.main.fragment_mycontact.*
 import org.w3c.dom.Text
 import java.io.PrintStream
@@ -41,7 +43,7 @@ class MyContactFragment : Fragment(), View.OnClickListener {
     private fun getCurrentContactDetails() {
         val currentContactTextView = v.findViewById<TextView>(R.id.currentContactTextView)
 
-        if (!fileExist("my_contact.txt")) {
+        if (!fileExist(activity!!.baseContext, "my_contact.txt")) {
             currentContactTextView.text = "No contact details."
             return
         }
@@ -89,25 +91,6 @@ class MyContactFragment : Fragment(), View.OnClickListener {
                 contactEditText.text.clear()
             }
         }
-    }
-
-    private fun fileExist(fname: String?): Boolean {
-        val file = activity!!.baseContext.getFileStreamPath(fname)
-        return file.exists()
-    }
-
-    // join any spaces, add +65 in front if no prefix starting with +.
-    private fun formatContactNumber(contactNumber : String) : String {
-        var result = ""
-
-        if (contactNumber.substring(0, 1) != "+") {
-            result = "+65$contactNumber"
-        } else {
-            result = contactNumber
-        }
-
-        result = result.split(" ").joinToString("")
-        return result
     }
 
 }

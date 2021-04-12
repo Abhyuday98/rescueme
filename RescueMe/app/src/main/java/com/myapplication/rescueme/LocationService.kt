@@ -21,6 +21,7 @@ import com.google.android.gms.location.*
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.myapplication.rescueme.Helper.Companion.fileExist
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -167,7 +168,7 @@ class LocationService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     // get victim name and number in the form of arraylist: [name, number]
     private fun getVictimDetails() : ArrayList<String> {
-        if (!fileExist("my_contact.txt")) {
+        if (!fileExist(baseContext, "my_contact.txt")) {
             return ArrayList()
         }
 
@@ -189,7 +190,7 @@ class LocationService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     // get rescuer details in the form of hashmap: id -> [name, number]
     private fun getRescuerDetails() : HashMap<String, ArrayList<String>> {
-        if (!fileExist("contacts.txt")) {
+        if (!fileExist(baseContext, "contacts.txt")) {
             return HashMap()
         }
 
@@ -236,11 +237,6 @@ class LocationService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleAp
         val victimRef = myRef.child(victimNum)
         val rescuerRef = victimRef.child(rescuerNum)
         rescuerRef.setValue(newRecord)
-    }
-
-    private fun fileExist(fname: String?): Boolean {
-        val file = baseContext.getFileStreamPath(fname)
-        return file.exists()
     }
 
 

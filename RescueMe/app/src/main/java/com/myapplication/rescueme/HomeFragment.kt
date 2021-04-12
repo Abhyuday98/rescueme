@@ -31,6 +31,8 @@ import androidx.fragment.app.Fragment
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
+import com.myapplication.rescueme.Helper.Companion.fileExist
+import com.myapplication.rescueme.Helper.Companion.toMD5
 import kotlinx.android.synthetic.main.activity_home.*
 import java.io.File
 import java.security.MessageDigest
@@ -325,7 +327,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     // get victim name and number in the form of arraylist: [name, number]
     private fun getVictimDetails() : ArrayList<String> {
-        if (!fileExist("my_contact.txt")) {
+        if (!fileExist(activity!!.baseContext, "my_contact.txt")) {
             return ArrayList()
         }
 
@@ -347,7 +349,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     // get rescuer details in the form of hashmap: id -> [name, number]
     private fun getRescuerDetails() : HashMap<String, ArrayList<String>> {
-        if (!fileExist("contacts.txt")) {
+        if (!fileExist(activity!!.baseContext, "contacts.txt")) {
             return HashMap()
         }
 
@@ -627,15 +629,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
         enterPasscodeEditText.text = null
     }
 
-    private fun String.toMD5(): String {
-        val bytes = MessageDigest.getInstance("MD5").digest(this.toByteArray())
-        return bytes.toHex()
-    }
-
-    private fun ByteArray.toHex(): String {
-        return joinToString("") { "%02x".format(it) }
-    }
-
     // compares the entered hashed passcode wih the one saved in file
     private fun isCorrectPasscode(passcodeString: String): Boolean {
         var originalPasscode = ""
@@ -649,16 +642,11 @@ class HomeFragment : Fragment(), View.OnClickListener {
         return hashedOldPasscode == originalPasscode
     }
 
-    private fun fileExist(fname: String?): Boolean {
-        val file = activity!!.baseContext.getFileStreamPath(fname)
-        return file.exists()
-    }
-
     // Get saved time. If for some reason no time is saved, default is 3 minutes.
     private fun getTime(): Long {
         var mMilliseconds = 0.toLong()
 
-        if (fileExist("time.txt")) {
+        if (fileExist(activity!!.baseContext, "time.txt")) {
             val scan = Scanner(activity!!.openFileInput("time.txt"))
 
             while (scan.hasNextLine()) {

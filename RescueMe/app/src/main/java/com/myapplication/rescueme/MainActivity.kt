@@ -10,6 +10,8 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.myapplication.rescueme.Helper.Companion.fileExist
+import com.myapplication.rescueme.Helper.Companion.formatContactNumber
 import com.myapplication.rescueme.databinding.ActivityMainBinding
 import java.io.File
 import java.io.PrintStream
@@ -52,7 +54,7 @@ class MainActivity : AppCompatActivity() {
             }
         }  else {
             // go directly to HomeActivity if passcode exists
-            if (fileExist("passcode.txt")) {
+            if (fileExist(baseContext, "passcode.txt")) {
                 val it = Intent(this, HomeActivity::class.java)
                 it.action = "start"
                 startActivity(it)
@@ -87,20 +89,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-    }
-
-    // join any spaces, add +65 in front if no prefix starting with +.
-    private fun formatContactNumber(contactNumber : String) : String {
-        var result = ""
-
-        if (contactNumber.substring(0, 1) != "+") {
-            result = "+65$contactNumber"
-        } else {
-            result = contactNumber
-        }
-
-        result = result.split(" ").joinToString("")
-        return result
     }
 
     fun goToContacts(view: View) {
@@ -177,7 +165,7 @@ class MainActivity : AppCompatActivity() {
         var contactExists = false
 
         // check if file exist before reading.
-        if (fileExist("contacts.txt")) {
+        if (fileExist(baseContext,"contacts.txt")) {
             val scan = Scanner(openFileInput("contacts.txt"))
 
             while (scan.hasNextLine()) {
@@ -204,13 +192,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun fileExist(fname: String?): Boolean {
-        val file = baseContext.getFileStreamPath(fname)
-        return file.exists()
-    }
-
     private fun setupContactsList() {
-        if (!fileExist("contacts.txt")) {
+        if (!fileExist(baseContext, "contacts.txt")) {
             return
         }
 
