@@ -3,6 +3,7 @@ plugins {
     id 'kotlin-android'
     id 'kotlin-android-extensions'
     id 'com.google.gms.google-services'
+    id 'de.undercouch.download'
 }
 
 android {
@@ -11,6 +12,9 @@ android {
 
     buildFeatures {
         viewBinding = true
+    }
+    aaptOptions {
+        noCompress "tflite"
     }
 
     defaultConfig {
@@ -22,6 +26,13 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resValue "string", "google_maps_key", (project.findProperty("GOOGLE_MAPS_API_KEY") ?: "")
+    }
+
+        configurations {
+        all { // You should exclude one of them not both of them
+            exclude group: 'com.google.flatbuffers', module: 'flatbuffers-java'
+//            exclude group: "com.android.support", module: "support-compat"
+        }
     }
 
     buildTypes {
@@ -38,8 +49,16 @@ android {
         jvmTarget = '1.8'
     }
 }
+// import DownloadModels task
+project.ext.ASSET_DIR = projectDir.toString() + '/src/main/assets'
+
+// Download default models; if you wish to use your own models then
+// place them in the "assets" directory and comment out below line.
+apply from: 'download_model.gradle'
+
 
 dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.3.2'
@@ -49,6 +68,16 @@ dependencies {
     implementation 'com.google.android.gms:play-services-maps:17.0.0'
     implementation "com.google.android.gms:play-services-location:15.0.1"
     implementation 'com.google.firebase:firebase-storage-ktx:19.1.1'
+    implementation "androidx.lifecycle:lifecycle-common-java8:2.2.0"
+    implementation "androidx.recyclerview:recyclerview:1.1.0"
+
+    implementation "androidx.lifecycle:lifecycle-extensions:2.0.0"
+    implementation "org.tensorflow:tensorflow-lite:2.3.0"
+    implementation "org.tensorflow:tensorflow-lite-select-tf-ops:2.3.0"
+    implementation "org.tensorflow:tensorflow-lite-support:0.1.0-rc1"
+    implementation "org.tensorflow:tensorflow-lite-metadata:0.1.0-rc2"
+
+
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'

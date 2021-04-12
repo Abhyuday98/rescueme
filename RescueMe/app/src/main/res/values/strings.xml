@@ -3,4 +3,7 @@
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="notification_title">Rescue Me</string>
+    <string name="notification_message">Running in background</string>
+    <string name="ticker_text">ticket Text</string>
 </resources>

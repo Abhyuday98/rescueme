@@ -9,21 +9,9 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import com.myapplication.rescueme.databinding.ActivityMainBinding
-import java.io.File
-import java.io.PrintStream
-import java.util.*
-import kotlin.collections.ArrayList
-
+import android.os.Bundle
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var binding:ActivityMainBinding
-    private val PICK_CONTACT = 1
-
-    private lateinit var myAdapter: ContactAdapter
-    private var contactsList = ArrayList<Contact>()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
