@@ -1,40 +1,21 @@
 package com.myapplication.rescueme
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.hardware.Camera
-import android.media.MediaRecorder
-import android.opengl.Visibility
-import android.os.Bundle
-import android.os.Handler
-import android.view.MenuItem
-import android.view.SurfaceView
-import android.view.View
-import android.widget.Toast
-import android.widget.Toolbar
-import androidx.appcompat.app.ActionBar
-import androidx.appcompat.app.ActionBarDrawerToggle
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.view.GravityCompat
-import androidx.drawerlayout.widget.DrawerLayout
-import com.google.android.material.navigation.NavigationView
-import com.myapplication.rescueme.databinding.ActivityHomeBinding
-import java.util.*
-
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.media.AudioFormat
 import android.media.AudioRecord
+import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import org.tensorflow.lite.Interpreter
@@ -50,90 +31,26 @@ import kotlin.concurrent.withLock
 import kotlin.math.ceil
 import kotlin.math.sin
 
-class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
-    private lateinit var binding:ActivityHomeBinding
-    private lateinit var drawer : DrawerLayout
 
-    @RequiresApi(Build.VERSION_CODES.Q)
+class SoundClassifierActivity : AppCompatActivity() {
+
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityHomeBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_sound_classifier)
+//        if (!Settings.canDrawOverlays(this)) {
+//            val intent: Intent =
+//                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+//            startActivityForResult(intent, 0)
+//        }
 
-        val toolbar = binding.toolbar
-        setSupportActionBar(toolbar)
-
-        drawer = binding.drawerLayout
-        val navigationView : NavigationView = findViewById(R.id.nav_view) //somehow binding cannot find that id nav_view
-        navigationView.setNavigationItemSelectedListener(this)
-
-        val toggle : ActionBarDrawerToggle = ActionBarDrawerToggle(this, drawer, toolbar,
-            R.string.navigation_drawer_open, R.string.navigation_drawer_close)
-        drawer.addDrawerListener(toggle)
-        toggle.syncState()
-
-        // savedInstanceState null condition means load Home fragment on create if no rotation
-        // E.g. if contacts fragment is open, screen rotates stays at contacts fragment, will not load home fragment.
-        if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction().replace(R.id.fragment_container, HomeFragment()).commit()
-            navigationView.setCheckedItem(R.id.home)
-        }
-
-        requestRequiredPermissions()
-        MyService.startService(this, "Listening to you to keep you safe!")
-
+//        MyService.startService(this, "Listening to you to keep you safe!")
         var soundClassifier2 = SoundClassifier2(this)
         soundClassifier2.start(this)
         var labelName = soundClassifier2.labelList[1] // e.g. "No"
         soundClassifier2.probabilities.observe(this) { resultMap ->
             var probability = resultMap[labelName] // e.g. 0.7
             Log.i("sound", "$labelName -> ${probability.toString()}")
-        }
-
-    }
-
-    @RequiresApi(Build.VERSION_CODES.Q)
-    private fun requestRequiredPermissions() {
-        ActivityCompat.requestPermissions(
-            this, arrayOf(
-                Manifest.permission.FOREGROUND_SERVICE,
-            ), 222
-        )
-    }
-
-
-    override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.home -> {
-                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, HomeFragment()).commit()
-            }
-            R.id.contacts_setting -> {
-                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, ContactsFragment()).commit()
-            }
-            R.id.timer_setting -> {
-                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, TimerFragment()).commit()
-            }
-            R.id.passcode_setting -> {
-                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, PasscodeFragment()).commit()
-            }
-            R.id.rescue_tab -> {
-                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, RescueFragment()).commit()
-            }
-            R.id.mycontact_setting -> {
-                supportFragmentManager.beginTransaction().replace(R.id.fragment_container, MyContactFragment()).commit()
-            }
-        }
-
-        drawer.closeDrawer(GravityCompat.START)
-        return true
-    }
-
-    // so that when user press back, close navigation drawer if open instead of exiting activity first
-    override fun onBackPressed() {
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START)
-        } else {
-            super.onBackPressed()
         }
     }
     inner class SoundClassifier2(context: Context) {

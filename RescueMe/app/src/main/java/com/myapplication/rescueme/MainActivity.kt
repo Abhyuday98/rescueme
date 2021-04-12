@@ -231,4 +231,5 @@ class MainActivity : AppCompatActivity() {
             binding.nextBtn.visibility = View.VISIBLE
         }
     }
+
 }
