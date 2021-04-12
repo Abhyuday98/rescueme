@@ -545,6 +545,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         //  the activity from a service
                         //  the activity from a service
                         intent.action = Intent.ACTION_MAIN
+                        intent.putExtra("danger", "yes")
                         intent.addCategory(Intent.CATEGORY_LAUNCHER)
                         startActivity(intent)
                         close()
