@@ -41,6 +41,7 @@ import kotlin.collections.ArrayList
 
 class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var v: View
+    private val locationService = LocationService()
 
     // video variables
     private var duration = 30000 // duration of video in milliseconds
@@ -176,7 +177,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         infoTv.text = "If you need immediate help, click the Help button."
 
         // stop location
-        LocationService.stopService(activity!!) // Figure out how to stop?
+        locationService.stopService(activity!!)
 
         // delete victim details from firebase
         val database = Firebase.database
@@ -290,7 +291,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
 //        }
 
         // goes to LocationService to update details and location continuously.
-        LocationService.startService(activity!!, "Retrieving location...")
+        locationService.startService(activity!!, "Updating location...")
 
         Toast.makeText(activity!!, "Rescue details successfully sent!", Toast.LENGTH_SHORT).show()
     }
