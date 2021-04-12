@@ -31,10 +31,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.RescueMe">
-        <activity android:name=".SoundClassifierActivity"></activity>
 
         <service
             android:name=".LocationService"
+            android:enabled="true"
+            android:exported="true" />
+
+        <service
+            android:name=".MyService"
             android:enabled="true"
             android:exported="true" />
 
@@ -64,6 +68,12 @@
             android:configChanges="orientation|screenSize"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.RescueMe.NoActionBar" />
+
+        <activity
+            android:name=".SoundClassifierActivity">
+
+        </activity>
+
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize"

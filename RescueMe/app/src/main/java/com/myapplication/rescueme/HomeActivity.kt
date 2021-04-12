@@ -512,29 +512,29 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 //                if (probList[1]>90){
                     val detected = probList[1]>0.95
                     if(detected){
-                        var channel_id = "1212"
-                        var channel_name = "1234"
-                        var notification_id = 1223
+//                        var channel_id = "1212"
+//                        var channel_name = "1234"
+//                        var notification_id = 1223
                         Log.i(
                             "sound",
                             "RescueMe | " + probList[1].toString() + " | " + detected.toString()
                         )
-                        val channel = NotificationChannel(
-                            channel_id,
-                            channel_name,
-                            NotificationManager.IMPORTANCE_HIGH
-                        )
-                        val builder = Notification.Builder(con, channel_id)
-                            .setContentTitle("Danger Alert!")
-                            .setContentText("Click to open!")
-                            .setSmallIcon(R.drawable.heroine1)
-                            .setChannelId(channel_id)
-                        val notification = builder.build()
-
-                        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                        manager.createNotificationChannel(channel)
-//                        manager.notify(notification_id, notification)
-                        Log.i("Notification", "Notif Sent")
+//                        val channel = NotificationChannel(
+//                            channel_id,
+//                            channel_name,
+//                            NotificationManager.IMPORTANCE_HIGH
+//                        )
+//                        val builder = Notification.Builder(con, channel_id)
+//                            .setContentTitle("Danger Alert!")
+//                            .setContentText("Click to open!")
+//                            .setSmallIcon(R.drawable.heroine1)
+//                            .setChannelId(channel_id)
+//                        val notification = builder.build()
+//
+//                        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+//                        manager.createNotificationChannel(channel)
+////                        manager.notify(notification_id, notification)
+//                        Log.i("Notification", "Notif Sent")
 //                        val intent = Intent(con, MainActivity::class.java)
 //                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
 //                        startActivity(intent)
