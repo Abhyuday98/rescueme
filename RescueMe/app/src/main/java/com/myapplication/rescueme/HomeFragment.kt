@@ -91,8 +91,13 @@ class HomeFragment : Fragment(), View.OnClickListener {
         if (extras != null) {
             val danger = extras.getString("danger")!!
             if (danger == "yes") {
+                Log.i("danger", "yes")
                 startTimer()
+            } else {
+                Log.i("danger", "no")
             }
+        } else {
+            Log.i("danger", "extras is null")
         }
 
         return v
