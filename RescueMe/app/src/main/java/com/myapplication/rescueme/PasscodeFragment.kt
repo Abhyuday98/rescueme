@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.myapplication.rescueme.Helper.Companion.toMD5
 import java.io.PrintStream
 import java.security.MessageDigest
 import java.util.*
@@ -30,15 +31,6 @@ class PasscodeFragment : Fragment(), View.OnClickListener {
         saveBtn.setOnClickListener(this)
 
         return v
-    }
-
-    private fun String.toMD5(): String {
-        val bytes = MessageDigest.getInstance("MD5").digest(this.toByteArray())
-        return bytes.toHex()
-    }
-
-    private fun ByteArray.toHex(): String {
-        return joinToString("") { "%02x".format(it) }
     }
 
     // compares the entered hashed passcode wih the one saved in file
@@ -89,7 +81,7 @@ class PasscodeFragment : Fragment(), View.OnClickListener {
                 errorMsg += "Confirm new passcode does not match.\n"
             }
 
-            if (isCorrectPasscode(oldPasscodeString) && is4digit(newPasscodeString) && is4digit(confirmNewPasscodeString)) {
+            if (errorMsg == "") {
                 val hashedNewPasscode = newPasscodeString.toMD5()
                 overwritePasscode(hashedNewPasscode)
                 Toast.makeText(activity!!, "Change passcode is successful.", Toast.LENGTH_SHORT).show()
