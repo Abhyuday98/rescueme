@@ -309,16 +309,13 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
 
                 for (i in 0 until address.maxAddressLineIndex + 1) {
                     addressText += if (i == 0) address.getAddressLine(i) else "\n" + address.getAddressLine(i)
-                    Log.i("MapsActivity", "geocodefor" + address.getAddressLine(i))
-                    Log.i("MapsActivity", "geocodeaddresstext" + addressText)
-
                 }
 
             } else {
-                Log.i("MapsActivity", "geocodeok but no add")
+                Log.i("MapsActivity", "Geocoding Ok but no address")
             }
         } catch (e: IOException) {
-            Log.e("MapsActivity", "geocodeissue"+ e.localizedMessage)
+            Log.e("MapsActivity", "Geocoding issue"+ e.localizedMessage)
         }
 
         return addressText
