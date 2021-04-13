@@ -300,9 +300,7 @@ class RescueActivity : AppCompatActivity(), SensorEventListener {
         var addressText = ""
 
         try {
-            // 2
             addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-            // 3
 
             if (null != addresses && !addresses.isEmpty()) {
                 address = addresses[0]
