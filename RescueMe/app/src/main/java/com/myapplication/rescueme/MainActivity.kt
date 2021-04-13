@@ -33,7 +33,6 @@ class MainActivity : AppCompatActivity() {
 
         setupContactsList()
 
-        // temporarily just remove based on item click
         binding.contactsLv.setOnItemClickListener { list, _, index, _ ->
             contactsList.removeAt(index)
             myAdapter.notifyDataSetChanged()

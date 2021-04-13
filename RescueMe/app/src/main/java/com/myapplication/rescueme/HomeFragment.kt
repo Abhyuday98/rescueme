@@ -89,19 +89,19 @@ class HomeFragment : Fragment(), View.OnClickListener {
         checkRescue()
         val activity = activity!!
         val action = activity.intent.action
-//        Log.i("danger", action)
+        Log.i("danger", action)
 
         if (action != null) {
             if (action == "danger") {
-//                Log.i("danger", "yes")
+                Log.i("danger", "yes")
                 ListeningService.stopService(activity)
 
                 startTimer()
             } else {
-//                Log.i("danger", "no")
+                Log.i("danger", "no")
             }
         } else {
-//            Log.i("danger", "action is null")
+            Log.i("danger", "action is null")
         }
 
         return v
@@ -210,10 +210,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
         }.addOnFailureListener {
             Log.i("Delete video error", "${it.message}")
         }
-
-//        val it = Intent(activity!!, MainActivity::class.java)
-//        it.action = "start"
-//        startActivity(it)
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -380,7 +376,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
         var file = Uri.fromFile(File(VIDEO_PATH))
         val uploadTask = victimRef.putFile(file)
 
-        // Register observers to listen for when the download is done or if it fails
         uploadTask.addOnFailureListener {
             // Handle unsuccessful uploads
             Log.i("Upload msg", "Video not sent. ${it.message}")
@@ -542,7 +537,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
         surfaceView.visibility = View.GONE
     }
 
-    // temp trigger via button click. Once we have audio detected, then can shift this function.
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun startTimer() {
         startHelp()

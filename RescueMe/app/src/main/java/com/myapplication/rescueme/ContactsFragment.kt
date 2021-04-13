@@ -48,7 +48,7 @@ class ContactsFragment : Fragment(), View.OnClickListener {
         v = inflater.inflate(R.layout.fragment_contacts, container, false)
         setupContactsList()
 
-        // temporarily just remove based on item click
+
         val contactsListView = v.findViewById<ListView>(R.id.contactsListView)
         contactsListView.setOnItemClickListener { list, _, index, _ ->
             contactsList.removeAt(index)
@@ -194,11 +194,6 @@ class ContactsFragment : Fragment(), View.OnClickListener {
             Toast.makeText(activity!!, "This contact has already been chosen!", Toast.LENGTH_LONG).show()
         }
     }
-
-//    private fun fileExist(fname: String?): Boolean {
-//        val file = activity!!.baseContext.getFileStreamPath(fname)
-//        return file.exists()
-//    }
 
     private fun setupContactsList() {
         if (!fileExist(activity!!.baseContext, "contacts.txt")) {
