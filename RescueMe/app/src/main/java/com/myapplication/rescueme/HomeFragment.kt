@@ -41,6 +41,7 @@ import kotlin.collections.ArrayList
 
 class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var v: View
+    private val locationService = LocationService()
 
     // video variables
     private var duration = 30000 // duration of video in milliseconds
@@ -141,7 +142,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 for (victim in data.keys) {
                     Log.i("userNumber", "victim: $victim")
                     Log.i("comparison", "victim:<$victim>, user:<$userNumber>")
-                    if (victim == userNumber) {
+                    if (victim == userNumber && isTimerRunning == false) {
                         displayRescuedFeatures()
                         break
                     }
@@ -194,7 +195,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         infoTv.text = "If you need immediate help, click the Help button."
 
         // stop location
-        LocationService.stopService(activity!!) // Figure out how to stop?
+        locationService.stopService(activity!!)
 
         // delete victim details from firebase
         val database = Firebase.database
@@ -304,15 +305,15 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private fun sendHelp() {
         uploadVideo()
 
-        // send to rescue contacts (commented off to prevent sending sms when testing)
+        // send to rescue contacts (comment off if you want to prevent sending sms when testing)
         val rescuerDetails = getRescuerDetails()
-//        for ((id, details) in rescuerDetails) {
-//            val rescuerNum = details[1]
-//            sendSMS(rescuerNum, "Please rescue me!")
-//        }
+        for ((id, details) in rescuerDetails) {
+            val rescuerNum = details[1]
+            sendSMS(rescuerNum, "Please rescue me!")
+        }
 
         // goes to LocationService to update details and location continuously.
-        LocationService.startService(activity!!, "Retrieving location...")
+        locationService.startService(activity!!, "Retrieving location...")
 
         Toast.makeText(activity!!, "Rescue details successfully sent!", Toast.LENGTH_SHORT).show()
     }
@@ -693,7 +694,10 @@ class HomeFragment : Fragment(), View.OnClickListener {
         }
         stopTimer()
         sendHelp()
-        displayRescuedFeatures()
+
+        if (isTimerRunning == false) {
+            displayRescuedFeatures()
+        }
         Toast.makeText(
             activity!!,
             "Rescue details have been sent to your contacts.",

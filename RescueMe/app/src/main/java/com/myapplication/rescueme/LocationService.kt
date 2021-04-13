@@ -35,24 +35,29 @@ class LocationService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleAp
     private lateinit var mFusedLocationClient: FusedLocationProviderClient
     private var latitude = 0.toDouble()
     private var longitude = 0.toDouble()
+    private var isStop = false
 
-    companion object {
-        fun startService(context: Context, message: String) {
-            val startIntent = Intent(context, LocationService::class.java)
-            startIntent.putExtra("inputExtra", message)
-            ContextCompat.startForegroundService(context, startIntent)
-        }
-        fun stopService(context: Context) {
-            val stopIntent = Intent(context, LocationService::class.java)
-            context.stopService(stopIntent)
-        }
+    fun startService(context: Context, message: String) {
+        val startIntent = Intent(context, LocationService::class.java)
+        startIntent.putExtra("inputExtra", message)
+        ContextCompat.startForegroundService(context, startIntent)
+    }
+    fun stopService(context: Context) {
+        isStop = true
+        Log.i("isStop", "$isStop")
+        val stopIntent = Intent(context, LocationService::class.java)
+        context.stopService(stopIntent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback)
+        Log.i("onDestroy", "onDestroy")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        //do heavy work on a background thread
         val input = intent?.getStringExtra("inputExtra")
         createNotificationChannel()
-//        val notificationIntent = Intent(this, SoundClassifierActivity::class.java)
         val notificationIntent = Intent(this, HomeActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -72,7 +77,13 @@ class LocationService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleAp
             buildGoogleApiClient()
         }
 
-//        stopSelf(); // When to stop updating location?
+        if (isStop) {
+            mFusedLocationClient.removeLocationUpdates(mLocationCallback)
+            Log.i("mGoogleApiClient onStartCommand", "$isStop")
+            stopSelf()
+        } else {
+            Log.i("mGoogleApiClient onStartCommand", "$isStop")
+        }
 
         return START_NOT_STICKY
     }
@@ -91,7 +102,6 @@ class LocationService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleAp
     }
 
     // Location code
-
     @Synchronized
     private fun buildGoogleApiClient() {
         mGoogleApiClient = GoogleApiClient.Builder(this)
@@ -112,6 +122,7 @@ class LocationService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleAp
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED) {
+
             mFusedLocationClient.requestLocationUpdates(
                 mLocationRequest,
                 mLocationCallback,
@@ -190,7 +201,7 @@ class LocationService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleAp
 
     // get rescuer details in the form of hashmap: id -> [name, number]
     private fun getRescuerDetails() : HashMap<String, ArrayList<String>> {
-        if (!fileExist(baseContext, "contacts.txt")) {
+        if (!fileExist(baseContext,"contacts.txt")) {
             return HashMap()
         }
 
