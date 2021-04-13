@@ -24,7 +24,6 @@ import android.view.*
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
@@ -35,7 +34,6 @@ import com.myapplication.rescueme.Helper.Companion.fileExist
 import com.myapplication.rescueme.Helper.Companion.toMD5
 import kotlinx.android.synthetic.main.activity_home.*
 import java.io.File
-import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -94,15 +92,15 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
         if (action != null) {
             if (action == "danger") {
-                Log.i("danger", "yes")
-                MyService.stopService(activity)
+//                Log.i("danger", "yes")
+                ListeningService.stopService(activity)
 
                 startTimer()
             } else {
-                Log.i("danger", "no")
+//                Log.i("danger", "no")
             }
         } else {
-            Log.i("danger", "action is null")
+//            Log.i("danger", "action is null")
         }
 
         return v

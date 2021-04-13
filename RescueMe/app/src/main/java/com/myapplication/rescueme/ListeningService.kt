@@ -8,18 +8,18 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 
-class MyService : Service() {
+class ListeningService : Service() {
     val TAG = "MyService"
     private val CHANNEL_ID = "ForegroundService Kotlin"
 
     companion object {
         fun startService(context: Context, message: String) {
-            val startIntent = Intent(context, MyService::class.java)
+            val startIntent = Intent(context, ListeningService::class.java)
             startIntent.putExtra("inputExtra", message)
             ContextCompat.startForegroundService(context, startIntent)
         }
         fun stopService(context: Context) {
-            val stopIntent = Intent(context, MyService::class.java)
+            val stopIntent = Intent(context, ListeningService::class.java)
             context.stopService(stopIntent)
         }
     }

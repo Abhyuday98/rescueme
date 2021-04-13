@@ -2,18 +2,9 @@ package com.myapplication.rescueme
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.hardware.Camera
 import android.media.MediaRecorder
-import android.opengl.Visibility
 import android.os.Bundle
-import android.os.Handler
 import android.view.MenuItem
-import android.view.SurfaceView
-import android.view.View
-import android.widget.Toast
-import android.widget.Toolbar
-import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -23,16 +14,11 @@ import com.google.android.material.navigation.NavigationView
 import com.myapplication.rescueme.databinding.ActivityHomeBinding
 import java.util.*
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
-import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
-import android.provider.Settings
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.LiveData
@@ -43,7 +29,6 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.nio.FloatBuffer
-import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -94,7 +79,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     public fun startClassifier() {
         Log.i("danger", "start Classifier")
         requestRequiredPermissions()
-        MyService.startService(this, "Listening to you to keep you safe!")
+        ListeningService.startService(this, "Listening to you to keep you safe!")
 
         var soundClassifier2 = SoundClassifier2(this)
         soundClassifier2.start(this)

@@ -38,7 +38,7 @@
             android:exported="true" />
 
         <service
-            android:name=".MyService"
+            android:name=".ListeningService"
             android:enabled="true"
             android:exported="true" />
 
