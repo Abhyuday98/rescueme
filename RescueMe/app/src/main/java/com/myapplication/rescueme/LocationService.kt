@@ -117,8 +117,8 @@ class LocationService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleAp
         Log.i("location connected", "onConnected is called!")
 
         mLocationRequest = LocationRequest()
-        mLocationRequest.setInterval(3000) // three second interval
-        mLocationRequest.setFastestInterval(3000)
+        mLocationRequest.setInterval(30000) // 30 seconds interval
+        mLocationRequest.setFastestInterval(30000)
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED) {
