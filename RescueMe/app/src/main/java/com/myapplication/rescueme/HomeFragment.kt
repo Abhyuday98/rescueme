@@ -89,7 +89,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
         checkRescue()
         val activity = activity!!
         val action = activity.intent.action
-        Log.i("danger", action)
 
         if (action != null) {
             if (action == "danger") {
